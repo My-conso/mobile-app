@@ -277,7 +277,6 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
    const isDisabled = disabled || loading;
 
    // Get all CSS variables at the top level
-   const primaryColor = useCSSVariable('--color-primary') || COLORS[effectiveTheme].primary;
    const foregroundColor =
       useCSSVariable('--color-foreground') || COLORS[effectiveTheme].foreground;
    // Text/icon colour on filled surfaces: white in light mode, navy in dark mode (bright fills)

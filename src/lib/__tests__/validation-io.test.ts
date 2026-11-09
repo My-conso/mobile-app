@@ -122,7 +122,7 @@ describe('sauvegarde', () => {
       expect(r.ok && r.activeVehicleId).toBeNull();
    });
    it('la photo (fichier local) n’est pas exportée', () => {
-      const json = toBackupJson({ entries: [], vehicles: [{ id: 'v', name: 'X', photoUri: 'file:///p.jpg' }], activeVehicleId: 'v', settings: DEFAULT_SETTINGS });
+      const json = toBackupJson({ entries: [], vehicles: [{ id: 'v', brand: 'X', model: 'Y', photoUri: 'file:///p.jpg' }], activeVehicleId: 'v', settings: DEFAULT_SETTINGS });
       expect(json).not.toContain('photoUri');
       expect(json).not.toContain('file:///');
    });

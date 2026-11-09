@@ -80,6 +80,12 @@ import {
    SlidersHorizontal,
    History,
    BarChart3,
+   ArrowUpRight,
+   ArrowDownRight,
+   ChevronLeft,
+   List,
+   Download,
+   Upload,
 } from 'lucide-react-native';
 import { cn } from '@/src/utils/tailwind';
 
@@ -159,7 +165,13 @@ export type IconName =
    | 'palette'
    | 'sliders'
    | 'history'
-   | 'bar-chart';
+   | 'bar-chart'
+   | 'trend-up'
+   | 'trend-down'
+   | 'chevron-left'
+   | 'list'
+   | 'download'
+   | 'upload';
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 export type IconColor =
@@ -280,6 +292,12 @@ const iconMap: Record<IconName, React.ComponentType<any>> = {
    sliders: SlidersHorizontal,
    history: History,
    'bar-chart': BarChart3,
+   'trend-up': ArrowUpRight,
+   'trend-down': ArrowDownRight,
+   'chevron-left': ChevronLeft,
+   list: List,
+   download: Download,
+   upload: Upload,
 };
 
 // Size mappings (in pixels)

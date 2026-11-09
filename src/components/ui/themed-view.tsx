@@ -9,7 +9,7 @@ export type ViewPadding = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 export type ViewMargin = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export type ViewRounded = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+export type ViewRounded = 'none' | 'chip' | 'sm' | 'md' | 'lg' | 'card' | 'xl' | 'hero' | '2xl' | 'full';
 
 export type ViewBorder = 'none' | 'default' | 'subtle';
 
@@ -138,7 +138,7 @@ export interface ThemedViewProps extends ViewProps {
 // Variant styles mapping to your CSS variables
 const variantStyles: Record<ViewVariant, string> = {
    default: 'bg-background',
-   card: 'bg-card border border-border-subtle',
+   card: 'bg-card border border-border',
    elevated: 'bg-card shadow-md',
    outlined: 'bg-transparent border border-border',
    subtle: 'bg-background-secondary',
@@ -299,10 +299,13 @@ const marginBottomStyles: Record<ViewMargin, string> = {
 // Border radius mapping to your radius variables
 const roundedStyles: Record<ViewRounded, string> = {
    none: 'rounded-none',
+   chip: 'rounded-chip', // 6px : odometer digit
    sm: 'rounded-sm', // --radius-sm: 0.5rem
    md: 'rounded-md', // --radius-md: 0.75rem
    lg: 'rounded-lg', // --radius-lg: 1rem
+   card: 'rounded-card', // 22px
    xl: 'rounded-xl', // --radius-xl: 1.5rem
+   hero: 'rounded-hero', // 28px : big card
    '2xl': 'rounded-2xl', // --radius-2xl: 2rem
    full: 'rounded-full', // --radius-full: 9999px
 };
@@ -314,6 +317,9 @@ const roundedTopStyles: Record<ViewRounded, string> = {
    md: 'rounded-t-md',
    lg: 'rounded-t-lg',
    xl: 'rounded-t-xl',
+   chip: 'rounded-t-chip',
+   card: 'rounded-t-card',
+   hero: 'rounded-t-hero',
    '2xl': 'rounded-t-2xl',
    full: 'rounded-t-full',
 };
@@ -324,6 +330,9 @@ const roundedBottomStyles: Record<ViewRounded, string> = {
    md: 'rounded-b-md',
    lg: 'rounded-b-lg',
    xl: 'rounded-b-xl',
+   chip: 'rounded-b-chip',
+   card: 'rounded-b-card',
+   hero: 'rounded-b-hero',
    '2xl': 'rounded-b-2xl',
    full: 'rounded-b-full',
 };
@@ -334,6 +343,9 @@ const roundedLeftStyles: Record<ViewRounded, string> = {
    md: 'rounded-l-md',
    lg: 'rounded-l-lg',
    xl: 'rounded-l-xl',
+   chip: 'rounded-l-chip',
+   card: 'rounded-l-card',
+   hero: 'rounded-l-hero',
    '2xl': 'rounded-l-2xl',
    full: 'rounded-l-full',
 };
@@ -344,6 +356,9 @@ const roundedRightStyles: Record<ViewRounded, string> = {
    md: 'rounded-r-md',
    lg: 'rounded-r-lg',
    xl: 'rounded-r-xl',
+   chip: 'rounded-r-chip',
+   card: 'rounded-r-card',
+   hero: 'rounded-r-hero',
    '2xl': 'rounded-r-2xl',
    full: 'rounded-r-full',
 };

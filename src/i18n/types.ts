@@ -1,1 +1,1 @@
-export type LanguageCodeSupportedT = 'fr' | 'en';
+export type LanguageCodeSupportedT = 'fr' | 'mg';

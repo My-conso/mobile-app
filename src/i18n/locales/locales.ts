@@ -3,9 +3,10 @@ import fr_common from './fr/common.json';
 import fr_errors from './fr/errors.json';
 import fr_fuel from './fr/fuel.json';
 
-//EN
-import en_common from './en/common.json';
-import en_errors from './en/errors.json';
+//MG (Malagasy)
+import mg_common from './mg/common.json';
+import mg_errors from './mg/errors.json';
+import mg_fuel from './mg/fuel.json';
 
 export const fr = {
    common: fr_common,
@@ -13,7 +14,8 @@ export const fr = {
    fuel: fr_fuel,
 };
 
-export const en = {
-   common: en_common,
-   errors: en_errors,
+export const mg = {
+   common: mg_common,
+   errors: mg_errors,
+   fuel: mg_fuel,
 };

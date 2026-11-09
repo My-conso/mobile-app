@@ -5,6 +5,7 @@
 
 import type { FuelEntry } from '@/src/features/fuel/types';
 import { previewEntry, sortEntries } from './consumption';
+import { parseDecimal } from './format';
 
 export type FieldErrorCode =
    | 'odometer_required'
@@ -125,4 +126,59 @@ export function validateDraft(
    }
 
    return { errors, warnings, hasErrors };
+}
+
+// ---------------------------------------------------------------------------
+// Vehicle form (first launch + "my bike" screen)
+// ---------------------------------------------------------------------------
+
+export interface VehicleDraftInput {
+   brand: string;
+   model: string;
+   year: string;
+   cc: string;
+   tank: string;
+}
+
+export interface VehicleDraftErrors {
+   brand?: 'required';
+   model?: 'required';
+   year?: 'required' | 'invalid';
+}
+
+export interface VehicleDraftResult {
+   errors: VehicleDraftErrors;
+   hasErrors: boolean;
+   /** Parsed values (optional fields are undefined when empty or invalid) */
+   value: { brand: string; model: string; year?: number; displacementCc?: number; tankCapacityLiters?: number };
+}
+
+export const MIN_VEHICLE_YEAR = 1950;
+
+/** Brand, model and a 4-digit year (1950 → next year) are required; cc and tank are optional. */
+export function validateVehicleDraft(d: VehicleDraftInput, now: Date = new Date()): VehicleDraftResult {
+   const errors: VehicleDraftErrors = {};
+   const brand = d.brand.trim();
+   const model = d.model.trim();
+   const yearText = d.year.trim();
+   const year = /^\d{4}$/.test(yearText) ? Number(yearText) : undefined;
+
+   if (!brand) errors.brand = 'required';
+   if (!model) errors.model = 'required';
+   if (!yearText) errors.year = 'required';
+   else if (year === undefined || year < MIN_VEHICLE_YEAR || year > now.getFullYear() + 1) errors.year = 'invalid';
+
+   const cc = parseDecimal(d.cc);
+   const tank = parseDecimal(d.tank);
+   return {
+      errors,
+      hasErrors: Object.keys(errors).length > 0,
+      value: {
+         brand,
+         model,
+         year: errors.year ? undefined : year,
+         displacementCc: cc != null && cc > 0 ? Math.round(cc) : undefined,
+         tankCapacityLiters: tank != null && tank > 0 ? tank : undefined,
+      },
+   };
 }

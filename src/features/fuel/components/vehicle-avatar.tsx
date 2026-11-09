@@ -3,7 +3,7 @@ import { ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
 import { ThemedImage } from '@/src/components/ui/themed-image';
 import { cn } from '@/src/utils/tailwind';
-import type { Vehicle } from '../types';
+import { vehicleName, type Vehicle } from '../types';
 
 export type VehicleAvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -16,7 +16,7 @@ const SIZES: Record<VehicleAvatarSize, { px: number; box: string; text: string }
 };
 
 /** Round vehicle picture. Falls back to the first letter of the name on a soft brand tint. */
-export function VehicleAvatar({ vehicle, size = 'md' }: { vehicle: Pick<Vehicle, 'name' | 'photoUri'>; size?: VehicleAvatarSize }) {
+export function VehicleAvatar({ vehicle, size = 'md' }: { vehicle: Pick<Vehicle, 'brand' | 'model' | 'photoUri'>; size?: VehicleAvatarSize }) {
    const s = SIZES[size];
    if (vehicle.photoUri) {
       return (
@@ -26,11 +26,11 @@ export function VehicleAvatar({ vehicle, size = 'md' }: { vehicle: Pick<Vehicle,
             height={s.px}
             rounded="full"
             minLoadingTime={0}
-            accessibilityLabel={vehicle.name}
+            accessibilityLabel={vehicleName(vehicle)}
          />
       );
    }
-   const initial = vehicle.name.trim().charAt(0).toUpperCase() || '?';
+   const initial = vehicleName(vehicle).charAt(0).toUpperCase() || '?';
    return (
       <ThemedView className={cn('bg-primary-soft items-center justify-center rounded-full', s.box)} accessibilityElementsHidden>
          <ThemedText weight="bold" color="primary" className={s.text}>

@@ -1,11 +1,12 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Row, ThemedView } from './themed-view';
+import { Row } from './themed-view';
 import { ThemedText } from './themed-text';
 import { ThemedIcon } from './themed-icon';
 import { ThemedPressable } from './themed-pressable';
 import { useTheme } from '@/src/theme/ThemeProvider';
+import { useThemeColor } from '@/src/hooks/use-theme-color';
 import { formatDateLong, formatTime } from '@/src/lib/format';
 
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
 /** Native date + time picker. Android: date dialog then time dialog. iOS: inline compact picker. */
 export function DateTimeField({ label, value, onChange }: Props) {
    const { isDark } = useTheme();
+   const primary = useThemeColor('--color-primary', 'primary');
 
    const openAndroid = () => {
       DateTimePickerAndroid.open({
@@ -40,34 +42,33 @@ export function DateTimeField({ label, value, onChange }: Props) {
       });
    };
 
-   return (
-      <ThemedView gap="xs" bg="transparent">
-         <ThemedText variant="label" weight="medium">
-            {label}
+   return Platform.OS === 'android' ? (
+      <ThemedPressable
+         onPress={openAndroid}
+         accessibilityLabel={label}
+         className="bg-card border-border min-h-12 flex-row items-center gap-2.5 rounded-md border px-4">
+         <ThemedIcon name="calendar" color="secondary" size="sm" />
+         <ThemedText variant="body" className="flex-1">
+            {capitalize(formatDateLong(value.toISOString()))}
          </ThemedText>
-         {Platform.OS === 'android' ? (
-            <ThemedPressable
-               onPress={openAndroid}
-               accessibilityLabel={label}
-               className="bg-card border-border min-h-12 flex-row items-center gap-3 rounded-lg border px-4">
-               <ThemedIcon name="calendar" color="primary" />
-               <ThemedText>
-                  {formatDateLong(value.toISOString())} · {formatTime(value.toISOString())}
-               </ThemedText>
-            </ThemedPressable>
-         ) : (
-            <Row items="center" justify="start" bg="transparent" className="min-h-12">
-               <DateTimePicker
-                  value={value}
-                  mode="datetime"
-                  display="compact"
-                  locale="fr-FR"
-                  maximumDate={new Date()}
-                  themeVariant={isDark ? 'dark' : 'light'}
-                  onChange={(_, d) => d && onChange(d)}
-               />
-            </Row>
-         )}
-      </ThemedView>
+         <ThemedText variant="body" color="secondary">
+            {formatTime(value.toISOString())}
+         </ThemedText>
+      </ThemedPressable>
+   ) : (
+      <Row items="center" justify="start" bg="transparent" className="min-h-12" accessibilityLabel={label}>
+         <DateTimePicker
+            value={value}
+            mode="datetime"
+            display="compact"
+            locale="fr-FR"
+            maximumDate={new Date()}
+            themeVariant={isDark ? 'dark' : 'light'}
+            accentColor={primary}
+            onChange={(_, d) => d && onChange(d)}
+         />
+      </Row>
    );
 }
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

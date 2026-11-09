@@ -13,4 +13,6 @@ export type RootStackParamList = {
    FuelForm: { entryId?: string } | undefined;
    /** No vehicleId → new vehicle, vehicleId → edit */
    VehicleForm: { vehicleId?: string } | undefined;
+   /** One app-wide preference on its own screen */
+   SettingEdit: { kind: 'currency' | 'alert' };
 };

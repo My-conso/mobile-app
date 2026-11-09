@@ -176,7 +176,8 @@ export function computeConsumption(entries: EntryInput[]): ConsumptionResult {
          kmPerL: valid ? distanceKm / liters : NaN,
          costPer100Km: valid && segCost !== null ? (segCost * 100) / distanceKm : null,
       };
-      for (const id of pendingIds) info[id] = { role: 'partial' };
+      // partial fills point to the segment that counted them (history shows "compté le 18 mars")
+      for (const id of pendingIds) info[id] = { role: 'partial', segment: valid ? segment : undefined };
       if (valid) {
          segments.push(segment);
          info[p.id] = { role: 'segment', segment };
@@ -242,12 +243,18 @@ export function computeAlert(result: ConsumptionResult, thresholdPercent: number
 
 export type Period = '3m' | '6m' | '1y' | 'all';
 
-export function filterSegmentsByPeriod(segments: Segment[], period: Period, now: Date = new Date()): Segment[] {
-   if (period === 'all') return segments;
+/** First instant of the period, or null for "all". */
+export function periodStart(period: Period, now: Date = new Date()): Date | null {
+   if (period === 'all') return null;
    const months = period === '3m' ? 3 : period === '6m' ? 6 : 12;
-   const limit = new Date(now);
-   limit.setMonth(limit.getMonth() - months);
-   return segments.filter(s => Date.parse(s.date) >= limit.getTime());
+   const start = new Date(now);
+   start.setMonth(start.getMonth() - months);
+   return start;
+}
+
+export function filterSegmentsByPeriod(segments: Segment[], period: Period, now: Date = new Date()): Segment[] {
+   const start = periodStart(period, now);
+   return start ? segments.filter(s => Date.parse(s.date) >= start.getTime()) : segments;
 }
 
 /**

@@ -1,61 +1,50 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Alert } from 'react-native';
+import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import i18next from 'i18next';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { Screen } from '@/src/components/layout/screen';
 import { ScrollContainer } from '@/src/components/layout/scroll-container';
-import { Row, ThemedView } from '@/src/components/ui/themed-view';
+import { ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
-import { ThemedInput } from '@/src/components/ui/themed-input';
-import { ThemedButton } from '@/src/components/ui/themed-button';
-import { ThemedIcon } from '@/src/components/ui/themed-icon';
-import { ThemedPressable } from '@/src/components/ui/themed-pressable';
-import { SectionCard } from '@/src/components/ui/themed-section-card';
 import { SegmentedControl } from '@/src/components/ui/themed-segmented-control';
-import { VehicleAvatar } from '@/src/features/fuel/components/vehicle-avatar';
-import { useFuelStore } from '@/src/features/fuel/store';
-import { useTheme, type ThemeMode } from '@/src/theme/ThemeProvider';
+import { RowGroup } from '@/src/components/ui/themed-row-group';
+import { ListRow } from '@/src/components/ui/themed-list-row';
+import { useActiveVehicle, useFuelStore } from '@/src/features/fuel/store';
+import { vehicleName } from '@/src/features/fuel/types';
 import { showToast } from '@/src/providers/toast-provider';
 import { showError } from '@/src/providers/error-provider';
-import { parseDecimal, formatNumber } from '@/src/lib/format';
+import { formatNumber } from '@/src/lib/format';
 import { parseBackupJson, toBackupJson, toCsv } from '@/src/lib/data-io';
-import { DEFAULT_SETTINGS } from '@/src/features/fuel/types';
+import type { LanguageCodeSupportedT } from '@/src/i18n/types';
 import type { RootStackParamList } from '@/src/navigation/types';
-import { cn } from '@/src/utils/tailwind';
+
+function SectionLabel({ children }: { children: string }) {
+   return (
+      <ThemedText variant="caption" color="muted" className="px-1 pt-2">
+         {children}
+      </ThemedText>
+   );
+}
 
 export function SettingsScreen() {
-   const { t } = useTranslation('fuel');
+   const { t, i18n } = useTranslation('fuel');
    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-   const { theme, setTheme } = useTheme();
 
    const settings = useFuelStore(s => s.settings);
    const entries = useFuelStore(s => s.entries);
    const vehicles = useFuelStore(s => s.vehicles);
    const activeVehicleId = useFuelStore(s => s.activeVehicleId);
-   const currentVehicles = vehicles;
-   const setActiveVehicle = useFuelStore(s => s.setActiveVehicle);
-   const updateSettings = useFuelStore(s => s.updateSettings);
    const replaceAll = useFuelStore(s => s.replaceAll);
    const clearAll = useFuelStore(s => s.clearAll);
+   const activeVehicle = useActiveVehicle();
 
-   const [currency, setCurrency] = useState(settings.currency);
-   const [threshold, setThreshold] = useState(String(settings.alertThresholdPercent));
-
-   const commitCurrency = () => {
-      const next = currency.trim() || DEFAULT_SETTINGS.currency;
-      setCurrency(next);
-      updateSettings({ currency: next });
-   };
-   const commitThreshold = () => {
-      const v = parseDecimal(threshold);
-      const next = v != null && v > 0 ? v : DEFAULT_SETTINGS.alertThresholdPercent;
-      setThreshold(String(next));
-      updateSettings({ alertThresholdPercent: next });
-   };
+   const language = (i18n.language === 'mg' ? 'mg' : 'fr') as LanguageCodeSupportedT;
 
    const share = async (filename: string, content: string, mimeType: string) => {
       try {
@@ -74,9 +63,16 @@ export function SettingsScreen() {
    };
 
    const stamp = new Date().toISOString().slice(0, 10);
-   const exportJson = () =>
-      share(`my-conso-${stamp}.json`, toBackupJson({ entries, vehicles, activeVehicleId, settings }), 'application/json');
-   const exportCsv = () => share(`my-conso-${stamp}.csv`, toCsv(entries, vehicles), 'text/csv');
+   const exportData = () =>
+      Alert.alert(t('settings.export'), undefined, [
+         {
+            text: t('settings.export_json'),
+            onPress: () =>
+               share(`tomo-${stamp}.json`, toBackupJson({ entries, vehicles, activeVehicleId, settings }), 'application/json'),
+         },
+         { text: t('settings.export_csv'), onPress: () => share(`tomo-${stamp}.csv`, toCsv(entries, vehicles), 'text/csv') },
+         { text: t('common.cancel'), style: 'cancel' },
+      ]);
 
    const importBackup = async () => {
       try {
@@ -88,22 +84,21 @@ export function SettingsScreen() {
             showToast('error', t('settings.import_error'));
             return;
          }
-         Alert.alert(t('settings.import_confirm_title'), t('settings.import_confirm_text', { count: parsed.entries.length }), [
+         Alert.alert(t('settings.import_title'), t('settings.import_text', { count: parsed.entries.length }), [
             { text: t('common.cancel'), style: 'cancel' },
             {
                text: t('common.confirm'),
                style: 'destructive',
                onPress: () => {
                   // Photos aren't in the backup: keep the ones already on this device for the same vehicle ids
-                  const keepPhoto = (id: string) => currentVehicles.find(v => v.id === id)?.photoUri;
+                  const keepPhoto = (id: string) => vehicles.find(v => v.id === id)?.photoUri;
                   replaceAll({
                      entries: parsed.entries,
                      vehicles: parsed.vehicles.map(v => ({ ...v, photoUri: keepPhoto(v.id) })),
                      activeVehicleId: parsed.activeVehicleId,
                      settings: parsed.settings,
+                     onboardingDone: true,
                   });
-                  setCurrency(parsed.settings.currency);
-                  setThreshold(String(parsed.settings.alertThresholdPercent));
                   showToast('success', t('settings.import_done'));
                },
             },
@@ -113,126 +108,83 @@ export function SettingsScreen() {
       }
    };
 
-   const clearData = () =>
-      Alert.alert(t('settings.clear_confirm_title'), t('settings.clear_confirm_text'), [
+   const eraseAll = () =>
+      Alert.alert(t('settings.erase_title'), t('settings.erase_text'), [
          { text: t('common.cancel'), style: 'cancel' },
          {
             text: t('common.continue'),
             style: 'destructive',
             onPress: () =>
-               Alert.alert(t('settings.clear_confirm_2_title'), t('settings.clear_confirm_2_text'), [
+               Alert.alert(t('settings.erase_title_2'), t('settings.erase_text_2'), [
                   { text: t('common.cancel'), style: 'cancel' },
                   {
-                     text: t('settings.clear'),
+                     text: t('settings.erase'),
                      style: 'destructive',
                      onPress: () => {
                         clearAll();
-                        setCurrency(DEFAULT_SETTINGS.currency);
-                        setThreshold(String(DEFAULT_SETTINGS.alertThresholdPercent));
-                        showToast('success', t('settings.clear_done'));
+                        showToast('success', t('settings.erase_done'));
                      },
                   },
                ]),
          },
       ]);
 
-   const themeOptions: { value: ThemeMode; label: string }[] = [
-      { value: 'system', label: t('settings.theme_system') },
-      { value: 'light', label: t('settings.theme_light') },
-      { value: 'dark', label: t('settings.theme_dark') },
+   const languages: { value: LanguageCodeSupportedT; label: string }[] = [
+      { value: 'fr', label: 'Français' },
+      { value: 'mg', label: 'Malagasy' },
    ];
 
    return (
       <Screen safeAreaEdges={['top']} withSmallPadding={false} withDismissKeyboardOnOutside={false}>
-         <ScrollContainer contentContainerClassName="gap-4 p-4 pb-8" keyboardShouldPersistTaps="handled">
-            <ThemedText variant="h2" weight="bold">
-               {t('settings.title')}
-            </ThemedText>
+         <ScrollContainer contentContainerClassName="gap-3 px-5 pt-7 pb-6">
+            <ThemedText variant="h2">{t('settings.title')}</ThemedText>
 
-            <SectionCard icon="car" title={t('settings.vehicles')} description={t('settings.vehicles_help')}>
-               <ThemedView gap="sm" bg="transparent">
-                  {vehicles.length === 0 ? (
-                     <ThemedText color="secondary">{t('settings.vehicles_empty')}</ThemedText>
-                  ) : null}
-                  {vehicles.map(v => {
-                     const active = v.id === activeVehicleId;
-                     const count = entries.filter(e => e.vehicleId === v.id).length;
-                     return (
-                        <Row
-                           key={v.id}
-                           items="center"
-                           className={cn('rounded-lg border', active ? 'bg-primary-soft border-primary' : 'bg-background-secondary border-border-subtle')}>
-                           <ThemedPressable
-                              onPress={() => setActiveVehicle(v.id)}
-                              accessibilityRole="radio"
-                              accessibilityState={{ selected: active }}
-                              className="min-h-16 flex-1 flex-row items-center gap-3 px-3">
-                              <ThemedView
-                                 className={cn('size-6 items-center justify-center rounded-full border-2', active ? 'bg-primary border-primary' : 'border-border bg-transparent')}>
-                                 {active ? <ThemedIcon name="check" color="inverse" customSize={14} strokeWidth={3} /> : null}
-                              </ThemedView>
-                              <VehicleAvatar vehicle={v} size="md" />
-                              <ThemedView bg="transparent" className="flex-1">
-                                 <ThemedText weight="semibold" numberOfLines={1}>
-                                    {v.name}
-                                 </ThemedText>
-                                 <ThemedText variant="caption" color="secondary" numberOfLines={1}>
-                                    {v.tankCapacityLiters != null
-                                       ? t('settings.vehicle_tank_value', { liters: formatNumber(v.tankCapacityLiters, 1).replace(/,0$/, '') })
-                                       : t('settings.vehicle_tank_unknown')}
-                                    {' · '}
-                                    {t('settings.vehicle_entries', { count })}
-                                 </ThemedText>
-                              </ThemedView>
-                           </ThemedPressable>
-                           <ThemedPressable
-                              onPress={() => navigation.navigate('VehicleForm', { vehicleId: v.id })}
-                              accessibilityLabel={t('settings.vehicle_edit', { name: v.name })}
-                              className="min-h-16 min-w-12 items-center justify-center">
-                              <ThemedIcon name="pencil" color="secondary" />
-                           </ThemedPressable>
-                        </Row>
-                     );
-                  })}
-               </ThemedView>
-               <ThemedButton
-                  title={t('settings.vehicle_add')}
-                  variant="outline"
-                  size="lg"
-                  fullWidth
-                  leftIcon={<ThemedIcon name="plus" color="primary" />}
-                  onPress={() => navigation.navigate('VehicleForm')}
+            <SectionLabel>{t('settings.language')}</SectionLabel>
+            <SegmentedControl options={languages} value={language} onChange={code => i18next.changeLanguage(code)} />
+
+            <SectionLabel>{vehicles.length > 1 ? t('settings.vehicles') : t('settings.vehicle_one')}</SectionLabel>
+            <RowGroup>
+               {vehicles.map(v => (
+                  <ListRow
+                     key={v.id}
+                     label={vehicleName(v)}
+                     value={v.id === activeVehicleId && vehicles.length > 1 ? t('settings.active') : v.year ? String(v.year) : undefined}
+                     onPress={() => navigation.navigate('VehicleForm', { vehicleId: v.id })}
+                  />
+               ))}
+               {activeVehicle ? (
+                  <ListRow
+                     label={t('settings.tank')}
+                     value={activeVehicle.tankCapacityLiters != null ? `${formatNumber(activeVehicle.tankCapacityLiters, 1).replace(/,0$/, '')} ${t('unit.l')}` : t('settings.tank_unset')}
+                     tone={activeVehicle.tankCapacityLiters != null ? 'default' : 'primary'}
+                     onPress={() => navigation.navigate('VehicleForm', { vehicleId: activeVehicle.id })}
+                  />
+               ) : null}
+               <ListRow label={t('settings.vehicle_add')} icon="plus" onPress={() => navigation.navigate('VehicleForm')} />
+            </RowGroup>
+
+            <SectionLabel>{t('settings.preferences')}</SectionLabel>
+            <RowGroup>
+               <ListRow label={t('settings.currency')} value={settings.currency} onPress={() => navigation.navigate('SettingEdit', { kind: 'currency' })} />
+               <ListRow
+                  label={t('settings.alert')}
+                  value={`+${formatNumber(settings.alertThresholdPercent, 0)} %`}
+                  onPress={() => navigation.navigate('SettingEdit', { kind: 'alert' })}
                />
-            </SectionCard>
+            </RowGroup>
 
-            <SectionCard icon="sliders" title={t('settings.preferences')} description={t('settings.preferences_help')}>
-               <ThemedInput label={t('settings.currency')} value={currency} onChangeText={setCurrency} onBlur={commitCurrency} maxLength={6} size="lg" />
-               <ThemedInput
-                  label={t('settings.alert_threshold')}
-                  helperText={t('settings.alert_threshold_help')}
-                  value={threshold}
-                  onChangeText={setThreshold}
-                  onBlur={commitThreshold}
-                  keyboardType="decimal-pad"
-                  size="lg"
-               />
-            </SectionCard>
+            <SectionLabel>{t('settings.data')}</SectionLabel>
+            <RowGroup>
+               <ListRow label={t('settings.export')} icon="download" chevron={false} onPress={exportData} />
+               <ListRow label={t('settings.import')} icon="upload" chevron={false} onPress={importBackup} />
+               <ListRow label={t('settings.erase')} icon="trash" tone="danger" chevron={false} onPress={eraseAll} />
+            </RowGroup>
 
-            <SectionCard icon="palette" title={t('settings.appearance')} description={t('settings.appearance_help')}>
-               <SegmentedControl options={themeOptions} value={theme} onChange={setTheme} />
-            </SectionCard>
-
-            <SectionCard icon="database" title={t('settings.data')} description={t('settings.data_help')}>
-               <Row gap="sm" bg="transparent">
-                  <ThemedButton title="JSON" variant="secondary" size="lg" className="flex-1" accessibilityLabel={t('settings.export_json')} onPress={exportJson} />
-                  <ThemedButton title="CSV" variant="secondary" size="lg" className="flex-1" accessibilityLabel={t('settings.export_csv')} onPress={exportCsv} />
-               </Row>
-               <ThemedButton title={t('settings.import')} variant="outline" size="lg" fullWidth onPress={importBackup} />
-            </SectionCard>
-
-            <SectionCard icon="alert-triangle" title={t('settings.danger_zone')} tone="danger">
-               <ThemedButton title={t('settings.clear')} variant="danger" size="lg" fullWidth onPress={clearData} />
-            </SectionCard>
+            <ThemedView bg="transparent" className="pt-1">
+               <ThemedText variant="caption" color="muted" align="center">
+                  {t('settings.footer', { version: Constants.expoConfig?.version ?? '1.0' })}
+               </ThemedText>
+            </ThemedView>
          </ScrollContainer>
       </Screen>
    );

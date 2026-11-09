@@ -2,111 +2,128 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/layout/screen';
 import { ScrollContainer } from '@/src/components/layout/scroll-container';
-import { ThemedView } from '@/src/components/ui/themed-view';
+import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
 import { SegmentedControl } from '@/src/components/ui/themed-segmented-control';
-import { LineChart } from '@/src/components/ui/themed-line-chart';
 import { BarChart } from '@/src/components/ui/themed-bar-chart';
-import { InfoRow } from '@/src/components/ui/themed-info-row';
+import { RowGroup } from '@/src/components/ui/themed-row-group';
 import { VehicleSwitcher } from '@/src/features/fuel/components/vehicle-switcher';
 import { useConsumption, useFuelStore, useVehicleEntries } from '@/src/features/fuel/store';
-import { entryCost, filterSegmentsByPeriod, summarize, type Period, type Segment } from '@/src/lib/consumption';
-import {
-   formatDate,
-   formatDayMonth,
-   formatKm,
-   formatKmPerL,
-   formatL100,
-   formatLiters,
-   formatMonthShort,
-   formatNumber,
-   monthKey,
-} from '@/src/lib/format';
+import { entryCost, filterSegmentsByPeriod, periodStart, summarize, type Period, type Segment } from '@/src/lib/consumption';
+import { formatDate, formatDayMonth, formatDayMonthName, formatKm, formatL100, formatLiters, formatNumber } from '@/src/lib/format';
 
-const compactMoney = (v: number) => (v >= 1000 ? `${formatNumber(v / 1000, v >= 10000 ? 0 : 1)}k` : formatNumber(v, 0));
+/** Beyond this many fill-ups the bars get too thin to read: keep the latest ones. */
+const MAX_BARS = 10;
+
+function TableRow({ label, value }: { label: string; value: string }) {
+   return (
+      <Row justify="between" items="center" gap="md" bg="transparent" className="min-h-12 px-4 py-3">
+         <ThemedText variant="body-small" color="secondary" className="flex-1">
+            {label}
+         </ThemedText>
+         <ThemedText numeric weight="medium" variant="body-small">
+            {value}
+         </ThemedText>
+      </Row>
+   );
+}
 
 export function StatsScreen() {
    const { t } = useTranslation('fuel');
-   const [period, setPeriod] = useState<Period>('6m');
+   const [period, setPeriod] = useState<Period>('all');
    const entries = useVehicleEntries();
    const currency = useFuelStore(s => s.settings.currency);
    const { segments } = useConsumption();
 
    const filtered = useMemo(() => filterSegmentsByPeriod(segments, period), [segments, period]);
    const summary = useMemo(() => summarize(filtered), [filtered]);
-   const recent = useMemo(() => summarize(filtered.slice(-3)), [filtered]);
 
    const best = useMemo(() => filtered.reduce<Segment | null>((b, s) => (!b || s.l100 < b.l100 ? s : b), null), [filtered]);
    const worst = useMemo(() => filtered.reduce<Segment | null>((w, s) => (!w || s.l100 > w.l100 ? s : w), null), [filtered]);
 
-   const spending = useMemo(() => {
-      const limit = new Date();
-      const months = period === '3m' ? 3 : period === '6m' ? 6 : period === '1y' ? 12 : null;
-      if (months) limit.setMonth(limit.getMonth() - months);
-      const map = new Map<string, { label: string; value: number }>();
-      [...entries]
-         .sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
-         .filter(e => months === null || Date.parse(e.date) >= limit.getTime())
-         .forEach(e => {
-            const key = monthKey(e.date);
-            const cur = map.get(key) ?? { label: formatMonthShort(e.date), value: 0 };
-            cur.value += entryCost(e) ?? 0;
-            map.set(key, cur);
-         });
-      return [...map.values()];
+   const spent = useMemo(() => {
+      const start = periodStart(period);
+      return entries.filter(e => !start || Date.parse(e.date) >= start.getTime()).reduce((sum, e) => sum + (entryCost(e) ?? 0), 0);
    }, [entries, period]);
 
-   const periods: { value: Period; label: string }[] = (['3m', '6m', '1y', 'all'] as Period[]).map(p => ({
-      value: p,
-      label: t(`stats.period.${p}`),
-   }));
+   const bars = filtered.slice(-MAX_BARS);
+   const items = bars.map(s => ({ label: bars.length <= 5 ? formatDayMonthName(s.date) : formatDayMonth(s.date), value: s.l100 }));
 
-   const dash = '—';
-   const segText = (s: Segment | null) => (s ? `${formatL100(s.l100)} ${t('unit.l100')} · ${formatDate(s.date)}` : dash);
+   const periods: { value: Period; label: string }[] = [
+      { value: '3m', label: t('stats.p3m') },
+      { value: '6m', label: t('stats.p6m') },
+      { value: '1y', label: t('stats.p1y') },
+      { value: 'all', label: t('stats.pall') },
+   ];
+
+   const dash = t('common.dash');
+   const caption = (s: Segment | null) => (s ? formatDate(s.date) : '');
 
    return (
       <Screen safeAreaEdges={['top']} withSmallPadding={false} withDismissKeyboardOnOutside={false}>
-         <ScrollContainer contentContainerClassName="gap-4 p-4 pb-8">
-            <ThemedText variant="h2" weight="bold">
-               {t('stats.title')}
-            </ThemedText>
+         <ScrollContainer contentContainerClassName="gap-4 px-5 pt-7 pb-6">
+            <ThemedText variant="h2">{t('stats.title')}</ThemedText>
             <VehicleSwitcher />
             <SegmentedControl options={periods} value={period} onChange={setPeriod} />
 
-            <ThemedView variant="card" padding="md" rounded="xl" border="subtle" gap="sm">
-               <ThemedText weight="semibold">{t('stats.chart_l100')}</ThemedText>
-               {filtered.length >= 1 ? (
-                  <>
-                     <LineChart
-                        points={filtered.map(s => ({ label: formatDayMonth(s.date), value: s.l100 }))}
-                        average={summary.l100}
-                        format={formatL100}
-                     />
-                     <ThemedText variant="caption" color="secondary">
-                        - - {t('stats.chart_average')} : {summary.l100 != null ? formatL100(summary.l100) : dash} {t('unit.l100')}
-                     </ThemedText>
-                  </>
+            <ThemedView variant="card" rounded="hero" gap="md" className="p-5">
+               <Row justify="between" items="center" gap="md" bg="transparent">
+                  <ThemedText variant="body-small" color="secondary">
+                     {t('stats.chart_title')}
+                  </ThemedText>
+                  {summary.l100 != null ? (
+                     <Row items="center" gap="sm" bg="transparent">
+                        <ThemedView className="border-foreground-muted w-4 border-t-2 border-dashed" />
+                        <ThemedText variant="caption" color="secondary">
+                           {t('stats.chart_average', { value: formatL100(summary.l100) })}
+                        </ThemedText>
+                     </Row>
+                  ) : null}
+               </Row>
+               {items.length > 0 ? (
+                  <BarChart
+                     items={items}
+                     average={summary.l100}
+                     format={formatL100}
+                     label={t('stats.chart_aria', { values: items.map(i => `${i.label} ${formatL100(i.value)}`).join(', '), avg: summary.l100 != null ? formatL100(summary.l100) : dash })}
+                  />
                ) : (
-                  <ThemedText color="secondary">{t('stats.chart_empty')}</ThemedText>
+                  <ThemedText color="secondary" className="py-6">
+                     {t('stats.chart_empty')}
+                  </ThemedText>
                )}
             </ThemedView>
 
-            <ThemedView variant="card" padding="md" rounded="xl" border="subtle" gap="sm">
-               <ThemedText weight="semibold">
-                  {t('stats.chart_spending')} ({currency})
-               </ThemedText>
-               {spending.length >= 1 ? <BarChart items={spending} format={compactMoney} /> : <ThemedText color="secondary">{t('stats.chart_empty')}</ThemedText>}
-            </ThemedView>
+            <Row gap="md" bg="transparent">
+               <ThemedView variant="card" rounded="card" gap="sm" className="flex-1 p-4">
+                  <ThemedText variant="caption" color="secondary">
+                     {t('stats.best')}
+                  </ThemedText>
+                  <ThemedText numeric weight="semibold" color="primary" className="text-[22px]">
+                     {best ? formatL100(best.l100) : dash}
+                  </ThemedText>
+                  <ThemedText variant="caption" color="muted">
+                     {caption(best)}
+                  </ThemedText>
+               </ThemedView>
+               <ThemedView variant="card" rounded="card" gap="sm" className="flex-1 p-4">
+                  <ThemedText variant="caption" color="secondary">
+                     {t('stats.worst')}
+                  </ThemedText>
+                  <ThemedText numeric weight="semibold" className="text-[22px]">
+                     {worst ? formatL100(worst.l100) : dash}
+                  </ThemedText>
+                  <ThemedText variant="caption" color="muted">
+                     {caption(worst)}
+                  </ThemedText>
+               </ThemedView>
+            </Row>
 
-            <ThemedView variant="card" padding="md" rounded="xl" border="subtle">
-               <InfoRow label={t('stats.table_average')} value={summary.l100 != null ? `${formatL100(summary.l100)} ${t('unit.l100')} · ${formatKmPerL(summary.kmPerL ?? 0)} ${t('unit.kml')}` : dash} />
-               <InfoRow label={t('stats.table_trend')} value={recent.l100 != null ? `${formatL100(recent.l100)} ${t('unit.l100')}` : dash} />
-               <InfoRow label={t('stats.table_best')} value={segText(best)} />
-               <InfoRow label={t('stats.table_worst')} value={segText(worst)} />
-               <InfoRow label={t('stats.table_segments')} value={String(summary.segmentCount)} />
-               <InfoRow label={t('stats.table_km')} value={`${formatKm(summary.totalKm)} ${t('unit.km')}`} />
-               <InfoRow label={t('stats.table_liters')} value={`${formatLiters(summary.totalLiters)} ${t('unit.l')}`} />
-            </ThemedView>
+            <RowGroup>
+               <TableRow label={t('stats.distance')} value={`${formatKm(summary.totalKm)} ${t('unit.km')}`} />
+               <TableRow label={t('stats.fuel')} value={`${formatLiters(summary.totalLiters)} ${t('unit.l')}`} />
+               <TableRow label={t('stats.spent')} value={`${formatNumber(spent, 0)} ${currency}`} />
+            </RowGroup>
          </ScrollContainer>
       </Screen>
    );

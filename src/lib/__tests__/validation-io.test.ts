@@ -1,6 +1,6 @@
-import { validateDraft, type FormDraft } from '../validation';
+import { validateDraft, validateVehicleDraft, type FormDraft } from '../validation';
 import { parseBackupJson, toBackupJson, toCsv } from '../data-io';
-import { migrateV1ToV2, migrateV2ToV3 } from '../migrations';
+import { migrateV1ToV2, migrateV2ToV3, migrateV3ToV4, splitLegacyName } from '../migrations';
 import { DEFAULT_SETTINGS, LEGACY_VEHICLE_NAME, type FuelEntry } from '@/src/features/fuel/types';
 
 const mk = (id: string, day: number, km: number, liters: number, full = true, vehicleId = 'default'): FuelEntry => ({
@@ -75,8 +75,8 @@ describe('validateDraft', () => {
 });
 
 const vehicles = [
-   { id: 'default', name: 'Cygnus', tankCapacityLiters: 5.5 },
-   { id: 'v2', name: 'Honda PCX', tankCapacityLiters: undefined },
+   { id: 'default', brand: 'Yamaha', model: 'Cygnus X', year: 2013, displacementCc: 125, tankCapacityLiters: 5.5 },
+   { id: 'v2', brand: 'Honda', model: 'PCX', year: 2020, tankCapacityLiters: undefined },
 ];
 
 describe('sauvegarde', () => {
@@ -87,7 +87,8 @@ describe('sauvegarde', () => {
       expect(r.ok).toBe(true);
       if (r.ok) {
          expect(r.entries).toHaveLength(4);
-         expect(r.vehicles.map(v => v.name)).toEqual(['Cygnus', 'Honda PCX']);
+         expect(r.vehicles.map(v => `${v.brand} ${v.model}`)).toEqual(['Yamaha Cygnus X', 'Honda PCX']);
+         expect(r.vehicles[0]).toMatchObject({ year: 2013, displacementCc: 125 });
          expect(r.vehicles[0].tankCapacityLiters).toBe(5.5);
          expect(r.activeVehicleId).toBe('v2');
          expect(r.entries.find(e => e.id === 'x')!.vehicleId).toBe('v2');
@@ -104,7 +105,7 @@ describe('sauvegarde', () => {
       expect(r.ok).toBe(true);
       if (r.ok) {
          expect(r.vehicles).toHaveLength(1);
-         expect(r.vehicles[0]).toMatchObject({ name: 'Ma moto', tankCapacityLiters: 6 });
+         expect(r.vehicles[0]).toMatchObject({ brand: 'Ma', model: 'moto', tankCapacityLiters: 6 });
          expect(r.entries.every(e => e.vehicleId === r.vehicles[0].id)).toBe(true);
          expect(r.settings.alertThresholdPercent).toBe(20);
       }
@@ -136,7 +137,7 @@ describe('sauvegarde', () => {
       const csv = toCsv([withNote, entries[1]], vehicles).split('\n');
       expect(csv).toHaveLength(3);
       expect(csv[0].startsWith('vehicule,date,kilometrage')).toBe(true);
-      expect(csv[1].startsWith('Cygnus,')).toBe(true);
+      expect(csv[1].startsWith('Yamaha Cygnus X,')).toBe(true);
       expect(csv[1]).toContain('"trajet, avec ""passager"""');
    });
 });
@@ -185,5 +186,54 @@ describe('migration v2 → v3 (plus de véhicule par défaut)', () => {
    it('garde plusieurs véhicules', () => {
       const m = migrateV2ToV3({ ...base, entries: [], vehicles: [{ id: 'default', name: LEGACY_VEHICLE_NAME }, { id: 'b', name: 'PCX' }] });
       expect(m.vehicles).toHaveLength(2);
+   });
+});
+
+describe('migration v3 → v4 (marque / modèle / année)', () => {
+   it('découpe « Yamaha Cygnus X 2013 » en marque, modèle et année', () => {
+      expect(splitLegacyName('Yamaha Cygnus X 2013')).toEqual({ brand: 'Yamaha', model: 'Cygnus X', year: 2013 });
+      expect(splitLegacyName('Honda PCX')).toEqual({ brand: 'Honda', model: 'PCX', year: undefined });
+      expect(splitLegacyName('Scooter')).toEqual({ brand: 'Scooter', model: '', year: undefined });
+      expect(splitLegacyName('')).toEqual({ brand: '', model: '', year: undefined });
+      expect(splitLegacyName('Yamaha 125')).toEqual({ brand: 'Yamaha', model: '125', year: undefined });
+   });
+   it('un utilisateur existant saute le premier lancement, un nouveau non', () => {
+      const withVehicle = migrateV3ToV4({
+         entries: [],
+         vehicles: [{ id: 'a', name: 'Honda PCX 2020', tankCapacityLiters: 8, photoUri: 'file:///p.jpg' }],
+         activeVehicleId: 'a',
+         settings: DEFAULT_SETTINGS,
+      });
+      expect(withVehicle.onboardingDone).toBe(true);
+      expect(withVehicle.vehicles[0]).toEqual({ id: 'a', brand: 'Honda', model: 'PCX', year: 2020, tankCapacityLiters: 8, photoUri: 'file:///p.jpg' });
+      const empty = migrateV3ToV4({ entries: [], vehicles: [], activeVehicleId: null, settings: DEFAULT_SETTINGS });
+      expect(empty.onboardingDone).toBe(false);
+   });
+});
+
+describe('validateVehicleDraft', () => {
+   const now = new Date('2026-11-09T00:00:00.000Z');
+   const ok = { brand: 'Yamaha', model: 'Cygnus X', year: '2013', cc: '125', tank: '5,2' };
+
+   it('accepte une moto complète et parse les champs facultatifs', () => {
+      const r = validateVehicleDraft(ok, now);
+      expect(r.hasErrors).toBe(false);
+      expect(r.value).toEqual({ brand: 'Yamaha', model: 'Cygnus X', year: 2013, displacementCc: 125, tankCapacityLiters: 5.2 });
+   });
+   it('marque, modèle et année sont obligatoires', () => {
+      const r = validateVehicleDraft({ brand: ' ', model: '', year: '', cc: '', tank: '' }, now);
+      expect(r.errors).toEqual({ brand: 'required', model: 'required', year: 'required' });
+   });
+   it('année : 4 chiffres, de 1950 à l’an prochain', () => {
+      for (const year of ['13', '20133', 'abcd', '1949']) expect(validateVehicleDraft({ ...ok, year }, now).errors.year).toBe('invalid');
+      expect(validateVehicleDraft({ ...ok, year: '1950' }, now).hasErrors).toBe(false);
+      expect(validateVehicleDraft({ ...ok, year: '2027' }, now).hasErrors).toBe(false);
+      expect(validateVehicleDraft({ ...ok, year: '2028' }, now).errors.year).toBe('invalid');
+   });
+   it('cylindrée et réservoir vides ou invalides sont ignorés', () => {
+      const r = validateVehicleDraft({ ...ok, cc: '', tank: '0' }, now);
+      expect(r.hasErrors).toBe(false);
+      expect(r.value.displacementCc).toBeUndefined();
+      expect(r.value.tankCapacityLiters).toBeUndefined();
    });
 });

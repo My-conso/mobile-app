@@ -70,12 +70,12 @@ const variantStyles = {
       text: 'text-foreground-inverse',
    },
    secondary: {
-      container: 'bg-background-secondary',
+      container: 'bg-background-secondary border border-border',
       text: 'text-foreground',
    },
    outline: {
-      container: 'bg-transparent border-2 border-primary',
-      text: 'text-primary',
+      container: 'bg-transparent border border-border',
+      text: 'text-foreground',
    },
    ghost: {
       container: 'bg-transparent',
@@ -97,36 +97,36 @@ const variantStyles = {
 
 const sizeStyles = {
    xs: {
-      container: 'px-3 py-2 rounded-lg',
-      text: 'xs',
+      container: 'min-h-9 px-3 rounded-lg',
+      text: 'caption',
       iconSize: 14,
       gap: 'gap-1.5',
       dotSize: 4,
    },
    sm: {
-      container: 'px-4 py-2.5 rounded-lg',
-      text: 'sm',
+      container: 'min-h-11 px-4 rounded-lg',
+      text: 'body-small',
       iconSize: 16,
       gap: 'gap-2',
       dotSize: 5,
    },
    md: {
-      container: 'px-5 py-3 rounded-lg',
-      text: 'base',
+      container: 'min-h-13 px-5 rounded-lg',
+      text: 'button',
       iconSize: 18,
       gap: 'gap-2.5',
       dotSize: 6,
    },
    lg: {
-      container: 'px-6 py-3.5 rounded-xl',
-      text: 'lg',
+      container: 'min-h-14 px-6 rounded-[18px]',
+      text: 'button',
       iconSize: 20,
       gap: 'gap-3',
       dotSize: 7,
    },
    xl: {
-      container: 'px-8 py-4 rounded-xl',
-      text: 'xl',
+      container: 'min-h-14 px-8 rounded-[18px]',
+      text: 'button',
       iconSize: 22,
       gap: 'gap-3.5',
       dotSize: 8,
@@ -285,7 +285,6 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
 
    // Determine icon color based on variant
    const getIconColor = () => {
-      if (variant === 'outline') return primaryColor;
       if (
          variant === 'primary' ||
          variant === 'danger' ||
@@ -299,7 +298,6 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
 
    // Determine loading indicator color
    const getLoadingColor = () => {
-      if (variant === 'outline') return primaryColor;
       if (
          variant === 'primary' ||
          variant === 'danger' ||
@@ -343,9 +341,7 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
       const textColor =
          variantStyles[variant].text === 'text-foreground-inverse'
             ? 'inverse'
-            : variant === 'outline'
-              ? 'primary'
-              : 'default';
+            : 'default';
 
       const staticContent = children ? (
          <Row bg="transparent" className={cn('items-center', sizeStyles[size].gap)}>

@@ -1,0 +1,23 @@
+{
+   "language": {
+      "label_choice": "Safidio ny fiteninao",
+      "fr": "Français",
+      "mg": "Malagasy"
+   },
+   "content": {
+      "empty_menu": "Tsy misy menio azo ampiasaina amin'izao.",
+      "app_version": "Dikan-teny {{versionNumber}}"
+   },
+   "actions": {
+      "ok": "Ok",
+      "agree": "Eny",
+      "validate": "Ekena",
+      "confirm": "Hamafiso",
+      "choose": "Fidio"
+   },
+   "loading": {
+      "default_message": "Eo am-pandrosoana...",
+      "minimal": "Eo am-pandrosoana...",
+      "quote": "Miandrasa kely azafady"
+   }
+}

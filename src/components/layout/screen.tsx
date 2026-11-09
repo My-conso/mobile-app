@@ -49,7 +49,7 @@ export const Screen: React.FC<ScreenProps> = ({
    withKeyboardAvoiding = false,
    withDismissKeyboardOnOutside = true,
    backgroundColor = 'bg-background',
-   statusBarStyle = 'default',
+   statusBarStyle = 'light-content',
    statusBarColor = 'transparent',
    className = '',
    skeletonName,

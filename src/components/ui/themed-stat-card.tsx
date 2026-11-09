@@ -1,43 +1,31 @@
 import React from 'react';
-import { Row, ThemedView } from './themed-view';
+import { ThemedView, Row } from './themed-view';
 import { ThemedText } from './themed-text';
 
 interface StatCardProps {
    label: string;
    value: string;
    unit?: string;
-   sub?: string;
-   /** Small trend indicator shown next to the value */
-   trend?: { direction: 'up' | 'down'; tone: 'good' | 'bad' };
    className?: string;
 }
 
-export function StatCard({ label, value, unit, sub, trend, className }: StatCardProps) {
+/** Small figure tile: caption on top, big figure (Space Grotesk) and its unit below. */
+export function StatCard({ label, value, unit, className }: StatCardProps) {
    return (
-      <ThemedView variant="card" padding="md" rounded="xl" border="subtle" gap="xs" className={className}>
+      <ThemedView variant="card" padding="md" gap="sm" className={`rounded-[18px] ${className ?? ''}`}>
          <ThemedText variant="caption" color="secondary" numberOfLines={2}>
             {label}
          </ThemedText>
          <Row items="baseline" gap="xs" wrap="wrap" bg="transparent">
-            <ThemedText variant="h2" weight="bold" numberOfLines={1} adjustsFontSizeToFit>
+            <ThemedText numeric weight="semibold" className="text-[22px]" numberOfLines={1} adjustsFontSizeToFit>
                {value}
             </ThemedText>
-            {trend ? (
-               <ThemedText variant="body" weight="bold" color={trend.tone === 'good' ? 'success' : 'danger'}>
-                  {trend.direction === 'up' ? '↑' : '↓'}
-               </ThemedText>
-            ) : null}
             {unit ? (
-               <ThemedText variant="caption" color="secondary">
+               <ThemedText variant="body-small" weight="medium" color="secondary">
                   {unit}
                </ThemedText>
             ) : null}
          </Row>
-         {sub ? (
-            <ThemedText variant="caption" color="secondary">
-               {sub}
-            </ThemedText>
-         ) : null}
       </ThemedView>
    );
 }

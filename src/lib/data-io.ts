@@ -4,10 +4,11 @@
  */
 
 import type { FuelEntry, Settings, Vehicle } from '@/src/features/fuel/types';
-import { DEFAULT_SETTINGS, LEGACY_VEHICLE_ID, LEGACY_VEHICLE_NAME } from '@/src/features/fuel/types';
+import { DEFAULT_SETTINGS, LEGACY_VEHICLE_ID, LEGACY_VEHICLE_NAME, vehicleName } from '@/src/features/fuel/types';
+import { splitLegacyName } from './migrations';
 import { entryCost, sortEntries } from './consumption';
 
-export const BACKUP_VERSION = 2;
+export const BACKUP_VERSION = 3;
 
 export interface Backup {
    app: 'my-conso';
@@ -43,7 +44,7 @@ const csvCell = (v: string | number | boolean | undefined | null) => {
 };
 
 export function toCsv(entries: FuelEntry[], vehicles: Vehicle[] = []): string {
-   const names = new Map(vehicles.map(v => [v.id, v.name]));
+   const names = new Map(vehicles.map(v => [v.id, vehicleName(v)]));
    const header = [
       'vehicule',
       'date',
@@ -81,6 +82,7 @@ export type ParseResult =
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const optNum = (v: unknown) => (isNum(v) && v > 0 ? v : undefined);
+const optYear = (v: unknown) => (isNum(v) && Number.isInteger(v) && v >= 1950 && v <= 2100 ? v : undefined);
 const optStr = (v: unknown) => (typeof v === 'string' && v.trim() ? v : undefined);
 
 export function parseBackupJson(text: string): ParseResult {
@@ -103,12 +105,26 @@ export function parseBackupJson(text: string): ParseResult {
       for (const v of raw.vehicles) {
          if (!v || typeof v.id !== 'string' || ids.has(v.id)) return { ok: false, reason: 'invalid_vehicle' };
          ids.add(v.id);
-         vehicles.push({ id: v.id, name: optStr(v.name) ?? LEGACY_VEHICLE_NAME, tankCapacityLiters: optNum(v.tankCapacityLiters) });
+         const legacy = splitLegacyName(optStr(v.name) ?? '');
+         vehicles.push({
+            id: v.id,
+            brand: optStr(v.brand) ?? legacy.brand,
+            model: optStr(v.model) ?? legacy.model,
+            year: optYear(v.year) ?? (v.brand ? undefined : legacy.year),
+            displacementCc: optNum(v.displacementCc),
+            tankCapacityLiters: optNum(v.tankCapacityLiters),
+         });
       }
    }
    // v1 backup (single vehicle described in settings): rebuild it, but only if there is data to attach
    if (vehicles.length === 0 && (raw.entries.length > 0 || optStr(s.vehicleName))) {
-      vehicles = [{ id: LEGACY_VEHICLE_ID, name: optStr(s.vehicleName) ?? LEGACY_VEHICLE_NAME, tankCapacityLiters: optNum(s.tankCapacityLiters) }];
+      vehicles = [
+         {
+            id: LEGACY_VEHICLE_ID,
+            ...splitLegacyName(optStr(s.vehicleName) ?? LEGACY_VEHICLE_NAME),
+            tankCapacityLiters: optNum(s.tankCapacityLiters),
+         },
+      ];
    }
    const vehicleIds = new Set(vehicles.map(v => v.id));
 

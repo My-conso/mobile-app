@@ -55,6 +55,7 @@ describe('computeConsumption — scénario de référence', () => {
 
    it('plein 3 : partiel, intégré au segment 4', () => {
       expect(r.info['3'].role).toBe('partial');
+      expect(r.info['3'].segment!.entryId).toBe('4');
    });
 
    it('plein 4 : 180 km, 5,0 L → 2,78 L/100', () => {

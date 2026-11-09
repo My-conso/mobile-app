@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
+import Animated, { FadeIn, ReduceMotion, ZoomIn } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -10,16 +12,17 @@ import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
 import { ThemedInput } from '@/src/components/ui/themed-input';
 import { ThemedButton } from '@/src/components/ui/themed-button';
+import { ThemedIcon } from '@/src/components/ui/themed-icon';
+import { ThemedPressable } from '@/src/components/ui/themed-pressable';
+import { RowGroup } from '@/src/components/ui/themed-row-group';
 import { DateTimeField } from '@/src/components/ui/themed-date-time-field';
-import { SegmentedControl } from '@/src/components/ui/themed-segmented-control';
 import { SwitchRow } from '@/src/components/ui/themed-switch-row';
-import { useActiveVehicle, useFuelStore } from '@/src/features/fuel/store';
 import { VehicleAvatar } from '@/src/features/fuel/components/vehicle-avatar';
+import { useActiveVehicle, useConsumption, useFuelStore } from '@/src/features/fuel/store';
 import type { Vehicle } from '@/src/features/fuel/types';
 import { previewEntry, sortEntries } from '@/src/lib/consumption';
-import { formatKm, formatKmPerL, formatL100, formatMoney, formatNumber, parseDecimal } from '@/src/lib/format';
+import { formatKm, formatL100, formatNumber, parseDecimal } from '@/src/lib/format';
 import { round2, validateDraft, type FormDraft } from '@/src/lib/validation';
-import { showToast } from '@/src/providers/toast-provider';
 import type { RootStackParamList } from '@/src/navigation/types';
 
 type PriceMode = 'per_liter' | 'total';
@@ -85,9 +88,9 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
    );
    const [isFullTank, setIsFullTank] = useState(existing?.isFullTank ?? true);
    const [missedPrevious, setMissedPrevious] = useState(existing?.missedPrevious ?? false);
-   const [station, setStation] = useState(existing?.station ?? '');
-   const [note, setNote] = useState(existing?.note ?? '');
    const [submitted, setSubmitted] = useState(false);
+   /** Id of the entry just saved: shows the "C'est noté !" screen */
+   const [savedId, setSavedId] = useState<string | null>(null);
 
    const lastKnownKm = useMemo(() => {
       const others = sortEntries(entries.filter(e => e.id !== entryId));
@@ -141,39 +144,41 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
       // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
    }, [date, odometer, liters, priceText, priceMode, isFullTank, missedPrevious, entries, entryId]);
 
-   const err = (e?: { code: string; params?: Record<string, string | number> }) =>
+   const fieldError = (e?: { code: string; params?: Record<string, string | number> }) =>
       submitted && e
-         ? t(`form.errors.${e.code}` as 'form.errors.odometer_required', {
-              ...(e.params?.km != null ? { km: formatKm(Number(e.params.km)) } : {}),
+         ? t(`form.err_${e.code}` as 'form.err_odometer_required', {
+              km: e.params?.km != null ? formatKm(Number(e.params.km)) : '',
            })
          : undefined;
 
    const warningText = (w: { code: string; params?: Record<string, number> }) =>
-      t(`form.warnings.${w.code}` as 'form.warnings.liters_over_tank', {
+      t(`form.warn_${w.code}` as 'form.warn_liters_over_tank', {
          tank: w.params?.tank != null ? formatNumber(w.params.tank, 1) : '',
          km: w.params?.km != null ? formatKm(w.params.km) : '',
          l100: w.params?.l100 != null ? formatL100(w.params.l100) : '',
       });
 
    const persist = () => {
-      const pricePerLiter = resolved.pricePerLiter ?? undefined;
-      const totalCost = resolved.totalCost ?? undefined;
       const input = {
          vehicleId: vehicle.id,
          date: date.toISOString(),
          odometerKm: draft.odometerKm as number,
          liters: round2(draft.liters as number),
-         pricePerLiter,
-         totalCost,
+         pricePerLiter: resolved.pricePerLiter ?? undefined,
+         totalCost: resolved.totalCost ?? undefined,
          isFullTank,
          missedPrevious,
-         station: station.trim() || undefined,
-         note: note.trim() || undefined,
+         // not shown in the form anymore, but never lost when editing an older entry
+         station: existing?.station,
+         note: existing?.note,
       };
-      if (isEdit && entryId) updateEntry(entryId, input);
-      else addEntry(input);
-      showToast('success', t('form.saved'));
-      goBack();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (isEdit && entryId) {
+         updateEntry(entryId, input);
+         setSavedId(entryId);
+      } else {
+         setSavedId(addEntry(input).id);
+      }
    };
 
    const onSave = () => {
@@ -191,62 +196,61 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
 
    const onDelete = () =>
       Alert.alert(t('form.delete_title'), t('form.delete_text'), [
-         { text: t('form.cancel'), style: 'cancel' },
+         { text: t('common.cancel'), style: 'cancel' },
          {
-            text: t('form.delete'),
+            text: t('common.delete'),
             style: 'destructive',
             onPress: () => {
                if (entryId) deleteEntry(entryId);
-               showToast('success', t('form.deleted'));
                goBack();
             },
          },
       ]);
 
-   const previewText = (() => {
-      if (!preview) return t('form.preview_none');
-      const lines: string[] = [];
-      if (preview.distanceFromLastFullKm != null && preview.distanceFromLastFullKm > 0) {
-         lines.push(t('form.preview_distance', { km: formatKm(preview.distanceFromLastFullKm) }));
-      }
-      const { role, segment } = preview.info;
-      if (role === 'segment' && segment) {
-         lines.push(t('form.preview_consumption', { l100: formatL100(segment.l100), kml: formatKmPerL(segment.kmPerL) }));
-      } else if (role === 'reference') lines.push(t('form.preview_reference'));
-      else if (role === 'pending' || role === 'partial') lines.push(t('form.preview_pending'));
-      else if (role === 'broken') lines.push(t('form.preview_broken'));
-      else if (role === 'invalid') lines.push(t('form.preview_invalid'));
-      return lines.join('\n');
-   })();
+   const switchPriceMode = () => {
+      setPriceMode(m => (m === 'per_liter' ? 'total' : 'per_liter'));
+      setPriceText('');
+   };
+
+   // What the live calculation says about this fill-up
+   const role = preview?.info.role;
+   const segment = preview?.info.segment;
+   const showCalc = !!preview && role === 'segment' && !!segment;
+   const infoText = !preview
+      ? t('form.info_none')
+      : role === 'broken'
+        ? t('form.info_missed')
+        : role === 'pending' || role === 'partial'
+          ? t('form.info_partial')
+          : role === 'invalid'
+            ? t('form.info_invalid')
+            : role === 'reference'
+              ? t('form.info_reference')
+              : null;
 
    const computed =
       priceMode === 'per_liter'
          ? resolved.totalCost != null && resolved.totalCost > 0
-            ? formatMoney(resolved.totalCost, settings.currency)
+            ? t('form.total_value', { value: `${formatNumber(resolved.totalCost, 0)} ${settings.currency}` })
             : null
          : resolved.pricePerLiter != null && resolved.pricePerLiter > 0
-           ? `${formatNumber(resolved.pricePerLiter, 0)} ${settings.currency}/L`
+           ? t('form.per_liter_value', { value: `${formatNumber(resolved.pricePerLiter, 0)} ${settings.currency}` })
            : null;
+
+   if (savedId) {
+      return <SavedConfirmation entryId={savedId} onDone={goBack} />;
+   }
 
    return (
       <Screen withKeyboardAvoiding withSmallPadding={false}>
          <ScreenHeader
             title={isEdit ? t('form.title_edit') : t('form.title_new')}
             onBack={goBack}
-            backLabel={t('form.back')}
-            right={
-               vehicles.length > 1 ? (
-                  <Row items="center" justify="end" gap="sm" bg="transparent" className="flex-1 pr-2">
-                     <ThemedText color="secondary" numberOfLines={1} className="shrink">
-                        {vehicle.name}
-                     </ThemedText>
-                     <VehicleAvatar vehicle={vehicle} size="sm" />
-                  </Row>
-               ) : null
-            }
+            backLabel={t('common.back')}
+            right={vehicles.length > 1 ? <VehicleAvatar vehicle={vehicle} size="md" /> : undefined}
          />
 
-         <ScrollContainer contentContainerClassName="gap-4 p-4 pb-8" keyboardShouldPersistTaps="handled">
+         <ScrollContainer contentContainerClassName="gap-3.5 px-5 pt-3 pb-4" keyboardShouldPersistTaps="handled">
             <DateTimeField label={t('form.date')} value={date} onChange={setDate} />
 
             <ThemedInput
@@ -255,69 +259,119 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
                onChangeText={setOdometer}
                keyboardType="number-pad"
                size="lg"
-               error={err(validation.errors.odometerKm)}
-               helperText={
-                  lastKnownKm != null
-                     ? `${t('form.odometer_help')}\n${t('form.odometer_hint', { km: formatKm(lastKnownKm) })}`
-                     : t('form.odometer_help')
-               }
+               numeric
+               suffix={t('unit.km')}
+               error={fieldError(validation.errors.odometerKm)}
+               helperText={lastKnownKm != null ? t('form.odometer_last', { km: formatKm(lastKnownKm) }) : t('form.odometer_help')}
             />
 
-            <ThemedInput
-               label={t('form.liters')}
-               value={liters}
-               onChangeText={setLiters}
-               keyboardType="decimal-pad"
-               size="lg"
-               error={err(validation.errors.liters)}
-            />
+            <Row gap="md" bg="transparent" items="start">
+               <ThemedView bg="transparent" className="flex-1">
+                  <ThemedInput
+                     label={t('form.liters')}
+                     value={liters}
+                     onChangeText={setLiters}
+                     keyboardType="decimal-pad"
+                     numeric
+                     suffix={t('unit.l')}
+                     error={fieldError(validation.errors.liters)}
+                  />
+               </ThemedView>
+               <ThemedView bg="transparent" className="flex-1">
+                  <ThemedInput
+                     label={priceMode === 'per_liter' ? t('form.price_per_liter') : t('form.price_total')}
+                     value={priceText}
+                     onChangeText={setPriceText}
+                     keyboardType="decimal-pad"
+                     numeric
+                     suffix={settings.currency}
+                     error={fieldError(validation.errors.price)}
+                  />
+               </ThemedView>
+            </Row>
+            <Row justify="between" items="center" gap="md" bg="transparent" className="-mt-1">
+               <ThemedPressable onPress={switchPriceMode} className="min-h-11 justify-center">
+                  <ThemedText variant="caption" weight="medium" color="primary">
+                     {priceMode === 'per_liter' ? t('form.to_total') : t('form.to_per_liter')}
+                  </ThemedText>
+               </ThemedPressable>
+               {computed ? (
+                  <ThemedText variant="caption" color="secondary">
+                     {computed}
+                  </ThemedText>
+               ) : null}
+            </Row>
 
-            <ThemedView gap="sm" className="bg-transparent">
-               <SegmentedControl
-                  options={[
-                     { value: 'per_liter' as PriceMode, label: t('form.price_mode_per_liter') },
-                     { value: 'total' as PriceMode, label: t('form.price_mode_total') },
-                  ]}
-                  value={priceMode}
-                  onChange={(m: PriceMode) => {
-                     setPriceMode(m);
-                     setPriceText('');
-                  }}
-               />
-               <ThemedInput
-                  label={priceMode === 'per_liter' ? t('form.price_per_liter', { currency: settings.currency }) : t('form.total_cost', { currency: settings.currency })}
-                  value={priceText}
-                  onChangeText={setPriceText}
-                  keyboardType="decimal-pad"
-                  size="lg"
-                  error={err(validation.errors.price)}
-                  helperText={computed ? t('form.price_computed', { value: computed }) : undefined}
-               />
-            </ThemedView>
+            <RowGroup>
+               <SwitchRow label={t('form.full_tank')} help={t('form.full_tank_help')} value={isFullTank} onValueChange={setIsFullTank} />
+               <SwitchRow label={t('form.missed')} value={missedPrevious} onValueChange={setMissedPrevious} />
+            </RowGroup>
 
-            <SwitchRow label={t('form.full_tank')} help={t('form.full_tank_help')} value={isFullTank} onValueChange={setIsFullTank} />
-            <SwitchRow label={t('form.missed_previous')} value={missedPrevious} onValueChange={setMissedPrevious} />
+            {showCalc && segment ? (
+               <Row items="center" justify="between" gap="md" bg="transparent" rounded="lg" className="bg-primary-soft p-4">
+                  <ThemedView bg="transparent" gap="xs" className="flex-1">
+                     <ThemedText variant="caption" color="primary">
+                        {t('form.calc_title')}
+                     </ThemedText>
+                     <ThemedText variant="body-small">{t('form.calc_distance', { km: formatKm(segment.distanceKm) })}</ThemedText>
+                  </ThemedView>
+                  <Row items="baseline" gap="xs" bg="transparent">
+                     <ThemedText numeric weight="semibold" color="primary" className="text-[22px]">
+                        {formatL100(segment.l100)}
+                     </ThemedText>
+                     <ThemedText variant="caption" weight="medium" color="primary">
+                        L/100
+                     </ThemedText>
+                  </Row>
+               </Row>
+            ) : infoText ? (
+               <Row gap="sm" items="start" bg="transparent" rounded="lg" className="border-border border border-dashed p-4">
+                  <ThemedIcon name="info" size="sm" color="warning" />
+                  <ThemedText variant="caption" color="secondary" className="flex-1 leading-5">
+                     {infoText}
+                  </ThemedText>
+               </Row>
+            ) : null}
 
-            <ThemedInput label={t('form.station')} value={station} onChangeText={setStation} size="lg" />
-            <ThemedInput
-               label={t('form.note')}
-               placeholder={t('form.note_placeholder')}
-               value={note}
-               onChangeText={setNote}
-               size="lg"
-            />
-
-            <ThemedView variant="card" padding="md" rounded="xl" border="subtle" gap="xs" className="bg-primary-soft">
-               <ThemedText weight="bold">{t('form.preview_title')}</ThemedText>
-               <ThemedText color="secondary">{previewText}</ThemedText>
-            </ThemedView>
-
-            <ThemedView gap="sm" className="bg-transparent">
-               <ThemedButton title={t('form.save')} size="lg" fullWidth onPress={onSave} />
-               <ThemedButton title={t('form.cancel')} variant="secondary" size="lg" fullWidth onPress={() => goBack()} />
-               {isEdit ? <ThemedButton title={t('form.delete')} variant="danger" size="lg" fullWidth onPress={onDelete} /> : null}
-            </ThemedView>
+            {isEdit ? (
+               <ThemedButton title={t('common.delete')} variant="outline" size="md" fullWidth textClassName="text-danger" onPress={onDelete} />
+            ) : null}
          </ScrollContainer>
+
+         <ThemedView bg="transparent" className="px-5 pt-2 pb-7">
+            <ThemedButton title={t('form.save')} size="lg" fullWidth onPress={onSave} />
+         </ThemedView>
+      </Screen>
+   );
+}
+
+/** "C'est noté !": shown after saving, with the result of the calculation. */
+function SavedConfirmation({ entryId, onDone }: { entryId: string; onDone: () => void }) {
+   const { t } = useTranslation('fuel');
+   const result = useConsumption();
+   const segment = result.info[entryId]?.segment;
+   const average = result.summary.l100;
+   const body =
+      segment && average != null && result.info[entryId]?.role === 'segment'
+         ? t('form.saved_body', { l100: formatL100(segment.l100), km: formatKm(segment.distanceKm), avg: formatL100(average) })
+         : t('form.saved_plain');
+
+   return (
+      <Screen withSmallPadding={false}>
+         <Animated.View entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)} className="flex-1 items-center justify-center gap-5 px-8">
+            <Animated.View entering={ZoomIn.duration(420).reduceMotion(ReduceMotion.System)}>
+               <ThemedView className="bg-primary size-22 items-center justify-center rounded-full">
+                  <ThemedIcon name="check" customSize={44} color="inverse" strokeWidth={2.6} />
+               </ThemedView>
+            </Animated.View>
+            <ThemedView bg="transparent" gap="sm" className="items-center">
+               <ThemedText variant="h2">{t('form.saved_title')}</ThemedText>
+               <ThemedText color="secondary" align="center" className="leading-6">
+                  {body}
+               </ThemedText>
+            </ThemedView>
+            <ThemedButton title={t('form.back_home')} variant="outline" size="md" onPress={onDone} />
+         </Animated.View>
       </Screen>
    );
 }

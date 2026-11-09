@@ -19,6 +19,7 @@ export type TextColor =
    | 'default'
    | 'secondary'
    | 'muted'
+   | 'faint'
    | 'inverse'
    | 'primary'
    | 'accent'
@@ -41,6 +42,9 @@ export interface ThemedTextProps extends TextProps {
 
    /** Text color */
    color?: TextColor;
+
+   /** Figure: Space Grotesk with tabular digits (all numbers shown big) */
+   numeric?: boolean;
 
    /** Text alignment */
    align?: TextAlign;
@@ -70,26 +74,35 @@ export interface ThemedTextProps extends TextProps {
    testID?: string;
 }
 
-// Variant styles mapping to your CSS variables
-const variantStyles = {
-   h1: 'text-3xl font-bold',
-   h2: 'text-2xl font-semibold',
-   h3: 'text-xl font-semibold',
-   'body-large': 'text-lg',
-   body: 'text-base',
-   'body-small': 'text-sm leading-relaxed',
-   caption: 'caption',
-   overline: 'text-xs uppercase tracking-wider',
-   button: 'text-base font-semibold',
-   label: 'text-sm font-medium',
+// Variant = size (+ default weight). The font family is resolved separately: Inter for texts,
+// Space Grotesk for figures, one family per weight (custom fonts have no real font-weight).
+const variantStyles: Record<TextVariant, { size: string; weight: TextWeight }> = {
+   h1: { size: 'text-3xl', weight: 'semibold' },
+   h2: { size: 'text-[22px]', weight: 'semibold' },
+   h3: { size: 'text-lg', weight: 'semibold' },
+   'body-large': { size: 'text-[17px]', weight: 'normal' },
+   body: { size: 'text-[15px]', weight: 'normal' },
+   'body-small': { size: 'text-sm', weight: 'normal' },
+   caption: { size: 'text-[13px]', weight: 'normal' },
+   overline: { size: 'text-xs uppercase tracking-wider', weight: 'medium' },
+   button: { size: 'text-base', weight: 'semibold' },
+   label: { size: 'text-[13px]', weight: 'normal' },
 };
 
-// Font weights
-const weightStyles = {
-   normal: 'font-normal',
-   medium: 'font-medium',
-   semibold: 'font-semibold',
-   bold: 'font-bold',
+// Inter (texts)
+const textFamily: Record<TextWeight, string> = {
+   normal: 'font-sans',
+   medium: 'font-sans-medium',
+   semibold: 'font-sans-semibold',
+   bold: 'font-sans-semibold',
+};
+
+// Space Grotesk (figures)
+const numericFamily: Record<TextWeight, string> = {
+   normal: 'font-display',
+   medium: 'font-display',
+   semibold: 'font-display-semibold',
+   bold: 'font-display-bold',
 };
 
 // Text colors using your CSS variables
@@ -97,6 +110,7 @@ const colorStyles = {
    default: 'text-foreground',
    secondary: 'text-foreground-secondary',
    muted: 'text-foreground-muted',
+   faint: 'text-foreground-faint',
    inverse: 'text-foreground-inverse',
    primary: 'text-primary',
    accent: 'text-accent',
@@ -162,6 +176,7 @@ export const ThemedText: React.FC<ThemedTextProps> = ({
    variant = 'body',
    weight,
    color = 'default',
+   numeric = false,
    align = 'left',
    transform = 'none',
    numberOfLines,
@@ -175,11 +190,10 @@ export const ThemedText: React.FC<ThemedTextProps> = ({
 }) => {
    // Combine all classes
    const textClasses = cn(
-      // Base variant
-      variantStyles[variant],
-
-      // Weight (if provided, overrides variant weight)
-      weight && weightStyles[weight],
+      // Size, then the font family for the effective weight
+      variantStyles[variant].size,
+      (numeric ? numericFamily : textFamily)[weight ?? variantStyles[variant].weight],
+      numeric && 'tabular-nums',
 
       // Color
       colorStyles[color],

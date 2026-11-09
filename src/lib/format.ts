@@ -51,6 +51,12 @@ export function formatDate(iso: string): string {
    return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** "18 mars" */
+export function formatDayMonthName(iso: string): string {
+   const d = new Date(iso);
+   return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
 /** "lundi 30 mars 2026" */
 export function formatDateLong(iso: string): string {
    const d = new Date(iso);

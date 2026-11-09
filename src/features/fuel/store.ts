@@ -5,7 +5,7 @@ import { randomUUID } from 'expo-crypto';
 import { cacheStorage } from '@/src/providers/cache-provider';
 import { computeConsumption } from '@/src/lib/consumption';
 import { deleteVehiclePhoto } from '@/src/lib/vehicle-photo';
-import { migrateV1ToV2, migrateV2ToV3, type PersistedDataV2 } from '@/src/lib/migrations';
+import { migrateV1ToV2, migrateV2ToV3, migrateV3ToV4, type PersistedDataV3, type PersistedDataV4 } from '@/src/lib/migrations';
 import {
    DEFAULT_SETTINGS,
    type FuelEntry,
@@ -24,18 +24,15 @@ const mmkvStorage: StateStorage = {
 export type FuelEntryInput = Omit<FuelEntry, 'id' | 'createdAt' | 'updatedAt'>;
 export type VehicleInput = Omit<Vehicle, 'id'>;
 
-interface PersistedData {
-   entries: FuelEntry[];
-   vehicles: Vehicle[];
-   activeVehicleId: string | null;
-   settings: Settings;
-}
+type PersistedData = PersistedDataV4;
 
 interface FuelState extends PersistedData {
    addEntry: (input: FuelEntryInput) => FuelEntry;
    updateEntry: (id: string, input: FuelEntryInput) => void;
    deleteEntry: (id: string) => void;
    addVehicle: (input: VehicleInput) => Vehicle;
+   /** End of the first-launch flow: creates the first vehicle and never shows the flow again. */
+   completeOnboarding: (input: VehicleInput) => Vehicle;
    updateVehicle: (id: string, patch: Partial<VehicleInput>) => void;
    /** Deletes the vehicle AND its fill-ups (and its photo file). */
    deleteVehicle: (id: string) => void;
@@ -53,6 +50,7 @@ export const useFuelStore = create<FuelState>()(
          vehicles: [],
          activeVehicleId: null,
          settings: DEFAULT_SETTINGS,
+         onboardingDone: false,
 
          addEntry: input => {
             const now = new Date().toISOString();
@@ -74,6 +72,12 @@ export const useFuelStore = create<FuelState>()(
             const vehicle: Vehicle = { ...input, id: randomUUID() };
             // A new vehicle becomes the active one
             set(s => ({ vehicles: [...s.vehicles, vehicle], activeVehicleId: vehicle.id }));
+            return vehicle;
+         },
+
+         completeOnboarding: input => {
+            const vehicle: Vehicle = { ...input, id: randomUUID() };
+            set({ vehicles: [vehicle], activeVehicleId: vehicle.id, onboardingDone: true });
             return vehicle;
          },
 
@@ -108,11 +112,13 @@ export const useFuelStore = create<FuelState>()(
                vehicles: [],
                activeVehicleId: null,
                settings: DEFAULT_SETTINGS,
+               // erasing everything starts from scratch: the first-launch flow comes back
+               onboardingDone: false,
             }),
       }),
       {
          name: 'my-conso-fuel',
-         version: 3,
+         version: 4,
          storage: createJSONStorage(() => mmkvStorage),
          // Only persist data, never derived values or functions
          partialize: s => ({
@@ -120,11 +126,14 @@ export const useFuelStore = create<FuelState>()(
             vehicles: s.vehicles,
             activeVehicleId: s.activeVehicleId,
             settings: s.settings,
+            onboardingDone: s.onboardingDone,
          }),
          // v1 had a single vehicle stored in settings and no vehicleId on entries
          migrate: (persisted: unknown, version) => {
-            const v2 = version >= 2 ? (persisted as PersistedDataV2) : migrateV1ToV2(persisted);
-            return version >= 3 ? (persisted as PersistedData) : migrateV2ToV3(v2);
+            if (version >= 4) return persisted as PersistedData;
+            const v3: PersistedDataV3 =
+               version >= 3 ? (persisted as PersistedDataV3) : migrateV2ToV3(version >= 2 ? (persisted as never) : migrateV1ToV2(persisted));
+            return migrateV3ToV4(v3);
          },
       },
    ),

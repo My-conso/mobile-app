@@ -19,20 +19,21 @@ export function SegmentedControl<T extends string>({
    onChange: (v: T) => void;
 }) {
    return (
-      <Row rounded="lg" padding="xs" gap="xs" className="bg-background-secondary">
+      <Row rounded="full" padding="xs" gap="xs" className="bg-card border-border border" accessibilityRole="radiogroup">
          {options.map(o => {
             const active = o.value === value;
             return (
                <ThemedPressable
                   key={o.value}
                   onPress={() => onChange(o.value)}
-                  accessibilityState={{ selected: active }}
-                  className={cn('min-h-11 flex-1 items-center justify-center rounded-md px-1', active ? 'bg-primary' : '')}>
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active, checked: active }}
+                  className={cn('min-h-11 flex-1 items-center justify-center rounded-full px-1', active ? 'bg-primary' : '')}>
                   {/* One line only: shrink the text instead of wrapping on narrow screens */}
                   <ThemedText
                      variant="body-small"
-                     weight="semibold"
-                     color={active ? 'inverse' : 'default'}
+                     weight={active ? 'semibold' : 'normal'}
+                     color={active ? 'inverse' : 'secondary'}
                      numberOfLines={1}
                      adjustsFontSizeToFit
                      minimumFontScale={0.75}>

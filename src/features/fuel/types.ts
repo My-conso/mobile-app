@@ -1,6 +1,11 @@
 export interface Vehicle {
    id: string;
-   name: string;
+   brand: string;
+   model: string;
+   /** 4 digits, 1950 → next year (required when created in the app) */
+   year?: number;
+   /** Engine size in cm³ (optional) */
+   displacementCc?: number;
    /** undefined until the user fills it in */
    tankCapacityLiters?: number;
    /** Local file URI of the (optional) photo, stored in the app's document directory */
@@ -25,6 +30,9 @@ export interface FuelEntry {
    createdAt: string;
    updatedAt: string;
 }
+
+/** "Yamaha Cygnus X": what the app shows as the vehicle's name. */
+export const vehicleName = (v: Pick<Vehicle, 'brand' | 'model'>): string => `${v.brand} ${v.model}`.trim();
 
 /** App-wide settings (per-vehicle settings live on Vehicle). */
 export interface Settings {

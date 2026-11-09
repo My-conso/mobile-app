@@ -28,6 +28,10 @@ export interface ThemedInputProps extends Omit<TextInputProps, 'placeholder'> {
    success?: string;
    /** Warning message */
    warning?: string;
+   /** Unit shown after the value (e.g. km, L, Ar) */
+   suffix?: string;
+   /** Figures: Space Grotesk, used for numeric fields */
+   numeric?: boolean;
    /** Input variant */
    variant?: InputVariant;
    /** Input size */
@@ -63,9 +67,9 @@ export interface ThemedInputProps extends Omit<TextInputProps, 'placeholder'> {
 
 const variantStyles = {
    default: {
-      container: 'bg-card border rounded-xl',
-      defaultBorder: 'border-border-subtle',
-      focused: 'border-primary shadow-sm',
+      container: 'bg-background-secondary border rounded-md',
+      defaultBorder: 'border-border',
+      focused: 'border-primary',
       error: 'border-danger',
       success: 'border-success',
       warning: 'border-warning',
@@ -120,8 +124,8 @@ const sizeStyles = {
       rounded: 'rounded-lg',
    },
    md: {
-      container: 'py-3.5 px-4',
-      text: 'text-base',
+      container: 'min-h-13 px-4',
+      text: 'text-[17px]',
       label: 'text-sm',
       iconSize: 18,
       gap: 'gap-2',
@@ -129,8 +133,8 @@ const sizeStyles = {
       rounded: 'rounded-xl',
    },
    lg: {
-      container: 'py-4 px-5',
-      text: 'text-lg',
+      container: 'min-h-15 px-4',
+      text: 'text-[26px]',
       label: 'text-base',
       iconSize: 20,
       gap: 'gap-2.5',
@@ -186,6 +190,8 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
          rightIcon,
 
          // Features
+         suffix,
+         numeric = false,
          clearable = false,
          secureTextEntry = false,
          showCount = false,
@@ -309,10 +315,9 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
             {label && (
                <ThemedView className="flex-row items-center justify-between mb-2">
                   <ThemedText
-                     variant={sizeStyle.label as any}
-                     weight="medium"
+                     variant="caption"
                      color="secondary"
-                     className={cn('tracking-wide', labelClassName)}>
+                     className={labelClassName}>
                      {label}
                      {required && <ThemedText color="danger"> *</ThemedText>}
                   </ThemedText>
@@ -361,6 +366,7 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
                   }}
                   className={cn(
                      'flex-1 bg-transparent p-0 text-foreground',
+                     numeric ? 'font-display-semibold' : 'font-sans',
                      sizeStyle.text,
                      disabled && 'opacity-50',
                      inputClassName
@@ -377,6 +383,12 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
                   testID={testID}
                   {...props}
                />
+
+               {suffix ? (
+                  <ThemedText variant="body" color="secondary">
+                     {suffix}
+                  </ThemedText>
+               ) : null}
 
                {/* Right icons with better organization */}
                <ThemedView bg="transparent" className="flex-row items-center gap-1">

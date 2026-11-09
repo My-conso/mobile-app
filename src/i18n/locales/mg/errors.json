@@ -1,0 +1,46 @@
+{
+   "unknown": {
+      "title": "Hadisoana tsy nampoizina",
+      "message": "Nisy hadisoana tsy nampoizina. Efa fantatry ny ekipanay."
+   },
+   "screen": {
+      "not_found": {
+         "title": "Tsy hita ny votoaty",
+         "message": "Tsy misy na voafafa ny votoaty notadiavinao."
+      },
+      "camera": {
+         "title": "Tsy azo ampiasaina ny fakan-tsary",
+         "message": "Avelao ny fakan-tsary ao amin'ny fikirakirana."
+      },
+      "location": {
+         "title": "Tsy mandeha ny toerana",
+         "message": "Alefaso ny toerana raha te hampiasa ity endri-javatra ity."
+      },
+      "storage": {
+         "title": "Tsy ampy ny toerana fitehirizana",
+         "message": "Sasao ny toerana fitehirizana mba hitohizana."
+      },
+      "unknown": {
+         "title": "Nisy hadisoana",
+         "message": "Nisy hadisoana tsy nampoizina. Efa fantatry ny ekipanay."
+      }
+   },
+   "actions": {
+      "retry": "Andramo indray",
+      "go_back": "Hiverina",
+      "go_home": "Fandraisana",
+      "contact": "Hifandray amin'ny fanohanana",
+      "close": "Akatony",
+      "ok": "Ok",
+      "no_details": "Tsy misy antsipirian'ny teknika",
+      "help": "Fanampiana",
+      "support": "Fanohanana"
+   },
+   "modal": {
+      "dev_panel_title": "DEV — Antsipirian'ny teknika",
+      "message_label": "Hafatra",
+      "origin": "Niandohana",
+      "stack_trace": "Stack trace",
+      "dev_badge": "Fomba mpandrafitra"
+   }
+}

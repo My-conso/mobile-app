@@ -9,13 +9,15 @@ import { ScreenHeader } from '@/src/components/layout/screen-header';
 import { ScrollContainer } from '@/src/components/layout/scroll-container';
 import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
-import { ThemedInput } from '@/src/components/ui/themed-input';
 import { ThemedButton } from '@/src/components/ui/themed-button';
 import { ThemedIcon } from '@/src/components/ui/themed-icon';
 import { ThemedPressable } from '@/src/components/ui/themed-pressable';
 import { VehicleAvatar } from '@/src/features/fuel/components/vehicle-avatar';
+import { VehicleFields } from '@/src/features/fuel/components/vehicle-fields';
 import { useFuelStore } from '@/src/features/fuel/store';
-import { formatNumber, parseDecimal } from '@/src/lib/format';
+import { vehicleName } from '@/src/features/fuel/types';
+import { formatNumber } from '@/src/lib/format';
+import { validateVehicleDraft, type VehicleDraftInput } from '@/src/lib/validation';
 import { deleteVehiclePhoto, saveVehiclePhoto } from '@/src/lib/vehicle-photo';
 import { showToast } from '@/src/providers/toast-provider';
 import { showError } from '@/src/providers/error-provider';
@@ -43,8 +45,13 @@ export function VehicleFormScreen() {
    const existing = vehicles.find(v => v.id === vehicleId);
    const isEdit = !!existing;
 
-   const [name, setName] = useState(existing?.name ?? '');
-   const [tank, setTank] = useState(existing?.tankCapacityLiters != null ? formatNumber(existing.tankCapacityLiters, 2).replace(/,?0+$/, '') : '');
+   const [draft, setDraft] = useState<VehicleDraftInput>({
+      brand: existing?.brand ?? '',
+      model: existing?.model ?? '',
+      year: existing?.year ? String(existing.year) : '',
+      cc: existing?.displacementCc ? String(existing.displacementCc) : '',
+      tank: existing?.tankCapacityLiters != null ? formatNumber(existing.tankCapacityLiters, 2).replace(/,?0+$/, '') : '',
+   });
    // The photo is only written to permanent storage on Save, so cancelling leaves no orphan file.
    const [photoUri, setPhotoUri] = useState<string | undefined>(existing?.photoUri);
    const [submitted, setSubmitted] = useState(false);
@@ -54,7 +61,7 @@ export function VehicleFormScreen() {
       else navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
    };
 
-   const nameError = submitted && name.trim() === '' ? t('vehicle_form.name_required') : undefined;
+   const result = validateVehicleDraft(draft);
 
    const pick = async (source: 'camera' | 'library') => {
       try {
@@ -78,18 +85,16 @@ export function VehicleFormScreen() {
 
    const onSave = () => {
       setSubmitted(true);
-      if (name.trim() === '') return;
+      if (result.hasErrors) return;
       try {
-         const parsed = parseDecimal(tank);
-         const tankCapacityLiters = parsed != null && parsed > 0 ? parsed : undefined;
-
          // Copy only when the photo changed (a new pick lives in the picker's cache)
          const changed = photoUri !== existing?.photoUri;
          const finalPhoto = changed && photoUri ? saveVehiclePhoto(photoUri, existing?.id ?? 'new') : photoUri;
          if (changed) deleteVehiclePhoto(existing?.photoUri);
 
-         if (isEdit && vehicleId) updateVehicle(vehicleId, { name: name.trim(), tankCapacityLiters, photoUri: finalPhoto });
-         else addVehicle({ name: name.trim(), tankCapacityLiters, photoUri: finalPhoto });
+         const value = { ...result.value, photoUri: finalPhoto };
+         if (isEdit && vehicleId) updateVehicle(vehicleId, value);
+         else addVehicle(value);
          showToast('success', t('vehicle_form.saved'));
          goBack();
       } catch (e) {
@@ -98,12 +103,12 @@ export function VehicleFormScreen() {
    };
 
    const onDelete = () => {
-      if (!vehicleId) return;
+      if (!vehicleId || !existing) return;
       const count = entries.filter(e => e.vehicleId === vehicleId).length;
-      Alert.alert(t('vehicle_form.delete_title', { name: existing?.name ?? '' }), t('vehicle_form.delete_text', { count }), [
-         { text: t('vehicle_form.cancel'), style: 'cancel' },
+      Alert.alert(t('vehicle_form.delete_title', { name: vehicleName(existing) }), t('vehicle_form.delete_text', { count }), [
+         { text: t('common.cancel'), style: 'cancel' },
          {
-            text: t('vehicle_form.delete'),
+            text: t('common.delete'),
             style: 'destructive',
             onPress: () => {
                deleteVehicle(vehicleId);
@@ -116,71 +121,49 @@ export function VehicleFormScreen() {
 
    return (
       <Screen withKeyboardAvoiding withSmallPadding={false}>
-         <ScreenHeader
-            title={isEdit ? t('vehicle_form.title_edit') : t('vehicle_form.title_new')}
-            onBack={goBack}
-            backLabel={t('vehicle_form.back')}
-         />
+         <ScreenHeader title={isEdit ? t('vehicle_form.title_edit') : t('vehicle_form.title_new')} onBack={goBack} backLabel={t('common.back')} />
 
-         <ScrollContainer contentContainerClassName="gap-4 p-4 pb-8" keyboardShouldPersistTaps="handled">
+         <ScrollContainer contentContainerClassName="gap-6 px-5 pt-4 pb-6" keyboardShouldPersistTaps="handled">
             <ThemedView gap="md" bg="transparent" className="items-center">
-               <VehicleAvatar vehicle={{ name: name || '?', photoUri }} size="xl" />
-               <ThemedView items="center" gap="xs" bg="transparent">
-                  <ThemedText weight="semibold">{t('vehicle_form.photo')}</ThemedText>
-                  <ThemedText variant="caption" color="secondary" align="center">
-                     {t('vehicle_form.photo_help')}
-                  </ThemedText>
-               </ThemedView>
-               <Row gap="sm" bg="transparent">
+               <VehicleAvatar vehicle={{ brand: draft.brand || '?', model: draft.model, photoUri }} size="xl" />
+               <ThemedText variant="caption" color="secondary" align="center">
+                  {t('vehicle_form.photo_help')}
+               </ThemedText>
+               <Row gap="md" bg="transparent">
                   <ThemedButton
                      title={t('vehicle_form.photo_take')}
-                     variant="secondary"
-                     size="md"
-                     className="flex-1"
-                     leftIcon={<ThemedIcon name="camera" color="primary" size="sm" />}
+                     variant="outline"
+                     size="sm"
+                     leftIcon={<ThemedIcon name="camera" size="sm" />}
                      onPress={() => pick('camera')}
                   />
                   <ThemedButton
                      title={t('vehicle_form.photo_pick')}
-                     variant="secondary"
-                     size="md"
-                     className="flex-1"
-                     leftIcon={<ThemedIcon name="image" color="primary" size="sm" />}
+                     variant="outline"
+                     size="sm"
+                     leftIcon={<ThemedIcon name="image" size="sm" />}
                      onPress={() => pick('library')}
                   />
                </Row>
                {photoUri ? (
                   <ThemedPressable onPress={() => setPhotoUri(undefined)} className="min-h-11 flex-row items-center gap-2 px-3">
                      <ThemedIcon name="trash" color="danger" size="sm" />
-                     <ThemedText color="danger" weight="semibold">
+                     <ThemedText variant="body-small" weight="medium" color="danger">
                         {t('vehicle_form.photo_remove')}
                      </ThemedText>
                   </ThemedPressable>
                ) : null}
             </ThemedView>
 
-            <ThemedInput
-               label={t('vehicle_form.name')}
-               placeholder={t('vehicle_form.name_placeholder')}
-               value={name}
-               onChangeText={setName}
-               size="lg"
-               error={nameError}
-            />
-            <ThemedInput
-               label={t('vehicle_form.tank')}
-               helperText={t('vehicle_form.tank_help')}
-               value={tank}
-               onChangeText={setTank}
-               keyboardType="decimal-pad"
-               size="lg"
-            />
-            <ThemedView gap="sm" bg="transparent">
-               <ThemedButton title={t('vehicle_form.save')} size="lg" fullWidth onPress={onSave} />
-               <ThemedButton title={t('vehicle_form.cancel')} variant="secondary" size="lg" fullWidth onPress={goBack} />
-               {isEdit ? <ThemedButton title={t('vehicle_form.delete')} variant="danger" size="lg" fullWidth onPress={onDelete} /> : null}
-            </ThemedView>
+            <VehicleFields draft={draft} onChange={patch => setDraft(d => ({ ...d, ...patch }))} errors={submitted ? result.errors : undefined} />
          </ScrollContainer>
+
+         <ThemedView bg="transparent" gap="sm" className="px-5 pt-2 pb-7">
+            <ThemedButton title={t('vehicle_form.save')} size="lg" fullWidth onPress={onSave} />
+            {isEdit ? (
+               <ThemedButton title={t('vehicle_form.delete')} variant="outline" size="md" fullWidth textClassName="text-danger" onPress={onDelete} />
+            ) : null}
+         </ThemedView>
       </Screen>
    );
 }

@@ -1,18 +1,8 @@
 {
-   "tab_navigation": {
-      "label": {
-         "setting": "Paramètre"
-      }
-   },
    "language": {
-      "label_choice": "Choisir votre langue",
+      "label_choice": "Choisir ta langue",
       "fr": "Français",
-      "en": "Anglais"
-   },
-   "theme": {
-      "label_choice": "Choisissez votre thème",
-      "light": "Clair",
-      "dark": "Sombre"
+      "mg": "Malagasy"
    },
    "content": {
       "empty_menu": "Aucun menu n'est disponible pour le moment.",

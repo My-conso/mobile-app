@@ -1,81 +1,92 @@
 /**
- * Valeurs hexadécimales IDENTIQUES à celles de global.css (mêmes tokens, mêmes valeurs).
+ * Valeurs hexadécimales IDENTIQUES à celles de global.css (mêmes tokens, mêmes valeurs ; palette Nuit & Néon, sombre uniquement).
  * Elles servent aux consommateurs JS qui ne savent pas lire les variables CSS (graphiques SVG,
  * barre d'onglets, icônes, toasts) et de secours si une variable CSS est absente.
  * Toute modification de couleur se fait dans les DEUX fichiers.
  */
 
 export const COLORS = {
+   // The app is dark only: both entries hold the same palette (Nuit & Neon).
    light: {
       // Backgrounds
-      background: '#f8fafc',
-      backgroundSecondary: '#f1f5f9',
-      card: '#ffffff',
-      cardHover: '#f8fafc',
+      background: '#0f1012',
+      backgroundSecondary: '#212428',
+      card: '#17191c',
+      cardHover: '#212428',
 
       // Text
-      foreground: '#0f172a',
-      foregroundSecondary: '#475569',
-      foregroundMuted: '#64748b',
-      foregroundInverse: '#ffffff',
+      foreground: '#f4f5f0',
+      foregroundSecondary: '#a1a5ac',
+      foregroundMuted: '#858a93',
+      foregroundFaint: '#4a4e55',
+      foregroundInverse: '#0f1012',
 
       // Borders
-      border: '#cbd5e1',
-      borderSubtle: '#e2e8f0',
+      border: '#2c2f34',
+      borderSubtle: '#1e2024',
 
-      // Brand (deep orange: white text = 5.2:1)
-      primary: '#c2410c',
-      primaryHover: '#9a3412',
-      primarySoft: '#fff1e0',
+      // Brand (neon)
+      primary: '#c5f25a',
+      primaryHover: '#a8d43f',
+      primarySoft: '#2c3323',
+
+      // Accent (amber)
+      accent: '#f2b84b',
+      accentSoft: '#332a14',
 
       // Semantic
-      danger: '#dc2626',
-      dangerSoft: '#fee2e2',
-      success: '#15803d',
-      successSoft: '#dcfce7',
-      warning: '#92400e',
-      warningSoft: '#fef3c7',
-      info: '#1d4ed8',
-      infoSoft: '#dbeafe',
+      danger: '#ff6b5e',
+      dangerSoft: '#3a1f1d',
+      success: '#c5f25a',
+      successSoft: '#2c3323',
+      warning: '#f2b84b',
+      warningSoft: '#332a14',
+      info: '#a1a5ac',
+      infoSoft: '#212428',
 
       // Rating
-      rating: '#fbbf24',
-      ratingInactive: '#cbd5e1',
+      rating: '#f2b84b',
+      ratingInactive: '#2c2f34',
    },
    dark: {
-      // Backgrounds (night blue)
-      background: '#0f172a',
-      backgroundSecondary: '#1a2438',
-      card: '#1e293b',
-      cardHover: '#273449',
+      // Backgrounds
+      background: '#0f1012',
+      backgroundSecondary: '#212428',
+      card: '#17191c',
+      cardHover: '#212428',
 
       // Text
-      foreground: '#f8fafc',
-      foregroundSecondary: '#cbd5e1',
-      foregroundMuted: '#94a3b8',
-      foregroundInverse: '#0f172a',
+      foreground: '#f4f5f0',
+      foregroundSecondary: '#a1a5ac',
+      foregroundMuted: '#858a93',
+      foregroundFaint: '#4a4e55',
+      foregroundInverse: '#0f1012',
 
       // Borders
-      border: '#334155',
-      borderSubtle: '#263248',
+      border: '#2c2f34',
+      borderSubtle: '#1e2024',
 
-      // Brand (bright orange: navy text = 7.9:1)
-      primary: '#fb923c',
-      primaryHover: '#fdba74',
-      primarySoft: '#4a2c17',
+      // Brand (neon)
+      primary: '#c5f25a',
+      primaryHover: '#a8d43f',
+      primarySoft: '#2c3323',
+
+      // Accent (amber)
+      accent: '#f2b84b',
+      accentSoft: '#332a14',
 
       // Semantic
-      danger: '#f87171',
-      dangerSoft: '#4c2026',
-      success: '#4ade80',
-      successSoft: '#173a27',
-      warning: '#fbbf24',
-      warningSoft: '#43361a',
-      info: '#60a5fa',
-      infoSoft: '#1e3a5f',
+      danger: '#ff6b5e',
+      dangerSoft: '#3a1f1d',
+      success: '#c5f25a',
+      successSoft: '#2c3323',
+      warning: '#f2b84b',
+      warningSoft: '#332a14',
+      info: '#a1a5ac',
+      infoSoft: '#212428',
 
       // Rating
-      rating: '#fbbf24',
-      ratingInactive: '#475569',
+      rating: '#f2b84b',
+      ratingInactive: '#2c2f34',
    },
 };

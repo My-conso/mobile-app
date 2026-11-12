@@ -60,7 +60,6 @@ const CacheContext = createContext<CacheContextType | undefined>(undefined);
 // Cache key prefixes for organization
 export const CACHE_KEYS = {
    // App settings
-   THEME: 'app_theme',
    LANGUAGE: 'app_language',
 
    // App state
@@ -236,22 +235,4 @@ export const useCache = () => {
       throw new Error('useCache must be used within CacheProvider');
    }
    return context;
-};
-
-// App settings cache
-export const useAppSettings = () => {
-   const cache = useCache();
-
-   const getLanguage = (): string => {
-      return cache.get<string>(CACHE_KEYS.LANGUAGE) ?? 'fr';
-   };
-
-   const setLanguage = (language: string) => {
-      cache.set(CACHE_KEYS.LANGUAGE, language);
-   };
-
-   return {
-      getLanguage,
-      setLanguage,
-   };
 };

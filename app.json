@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "My Conso",
+    "name": "ToMo",
     "slug": "my-conso",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.myconso",
@@ -39,8 +39,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "My Conso a besoin d'accéder à tes photos pour choisir l'image de ton véhicule.",
-          "cameraPermission": "My Conso a besoin de l'appareil photo pour prendre une photo de ton véhicule."
+          "photosPermission": "ToMo a besoin d'accéder à tes photos pour choisir l'image de ton véhicule.",
+          "cameraPermission": "ToMo a besoin de l'appareil photo pour prendre une photo de ton véhicule."
         }
       ],
       [

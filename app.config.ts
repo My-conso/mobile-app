@@ -4,7 +4,7 @@ const EAS_PROJECT_ID = "";
 const PROJECT_SLUG = "my-conso";
 const OWNER = "diamondrarktvo";
 
-const APP_NAME = "My Conso";
+const APP_NAME = "ToMo";
 const BUNDLE_IDENTIFIER = "com.myconso";
 const PACKAGE_NAME = "com.myconso";
 const ICON = "./assets/images/icon.png";
@@ -49,7 +49,7 @@ export default ({ config }: { config: any }) => {
       version,
       orientation: "portrait",
       icon,
-      userInterfaceStyle: "automatic",
+      userInterfaceStyle: "dark",
       assetBundlePatterns: ["**/*"],
       ...(EAS_PROJECT_ID ? { extra: { eas: { projectId: EAS_PROJECT_ID } } } : {}),
       ...(OWNER ? { owner: OWNER } : {}),
@@ -83,8 +83,8 @@ export default ({ config }: { config: any }) => {
         [
           "expo-image-picker",
           {
-            photosPermission: "My Conso a besoin d'accéder à tes photos pour choisir l'image de ton véhicule.",
-            cameraPermission: "My Conso a besoin de l'appareil photo pour prendre une photo de ton véhicule.",
+            photosPermission: "ToMo a besoin d'accéder à tes photos pour choisir l'image de ton véhicule.",
+            cameraPermission: "ToMo a besoin de l'appareil photo pour prendre une photo de ton véhicule.",
           },
         ],
         [

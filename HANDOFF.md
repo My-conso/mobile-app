@@ -1,6 +1,6 @@
 # HANDOFF : refonte ToMo (à reprendre à la maison)
 
-> Dernière mise à jour : 2026-11-09. État : **typecheck, lint et 73 tests passent** ; **rien n'a été vu sur un téléphone ni sur un émulateur**.
+> Dernière mise à jour : 2026-11-12 (reprise : sections B, D et F faites, voir « Mise à jour du 12 novembre » en bas). État : **typecheck, lint et 73 tests passent** ; **rien n'a été vu sur un téléphone ni sur un émulateur**.
 > Le travail a déjà été commité par l'utilisateur sur `develop` (commit `e54e65e`, remote `origin` = `My-conso/mobile-app`). Les derniers ajustements faits après ce commit (voir « Non commité » plus bas) sont à commiter.
 
 ## 1. Référence de design
@@ -101,3 +101,12 @@ npx expo export --platform android --output-dir /tmp/export   # vérifie que le 
 - Correction du test `la photo n'est pas exportée` (véhicule avec `brand` / `model`) et suppression d'une variable inutilisée dans `themed-button.tsx`.
 - Ce fichier `HANDOFF.md`.
 → `git add -A && git commit` puis `git push` pour les récupérer à la maison.
+
+## 7. Mise à jour du 12 novembre
+
+Fait lors de la reprise :
+- **B (marque)** : icônes et splash du pack `tomo-brand/` copiés dans `assets/images/` (splash réduit pour tenir dans le cercle Android 12+ : rayon 309 px pour 338). `name` = « ToMo », `userInterfaceStyle` = `"dark"`. `slug` (`my-conso`), `package` et `bundleIdentifier` **inchangés**.
+- **D (nettoyage)** : CLAUDE.md et README mis à jour (ToMo, sombre uniquement, fr + mg, onboarding, store v4, nouveaux composants) ; `CACHE_KEYS.THEME` et `useAppSettings` supprimés (inutilisés).
+- **F (site)** : `../my-conso-website/` créé (HTML + CSS + JS sans build, FR / MG, FAQ, maquette de téléphone). Vérifié en rendu bureau et mobile 390 px. Dépôt git local initialisé (branche `main`, 1 commit), **aucun remote ajouté et rien poussé**. Voir son `README.md` pour la liste « à faire avant la mise en ligne ».
+
+Reste à faire (mis à jour) : A (vérifier sur téléphone, **jamais fait**), C (renommages : attend les noms de l'utilisateur), D partiel (restyler `src/components/feedback/*`, `ThemedBottomSheet`, toasts ; décider du sort des champs Station / Note), E (relecture malagasy de l'app **et du site**), F (renseigner `config.js`, domaine de `og:image`, choisir l'hébergement, `git remote add origin https://github.com/My-conso/website.git` puis push), G (build EAS et diffusion de l'APK).

@@ -1,4 +1,4 @@
-# My Conso
+# ToMo
 
 React Native app built with Expo, generated from `@diamondrarktvo/rn-starter`.
 

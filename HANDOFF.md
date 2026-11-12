@@ -110,3 +110,7 @@ Fait lors de la reprise :
 - **F (site)** : `../my-conso-website/` créé (HTML + CSS + JS sans build, FR / MG, FAQ, maquette de téléphone). Vérifié en rendu bureau et mobile 390 px. Dépôt git local initialisé (branche `main`, 1 commit), **aucun remote ajouté et rien poussé**. Voir son `README.md` pour la liste « à faire avant la mise en ligne ».
 
 Reste à faire (mis à jour) : A (vérifier sur téléphone, **jamais fait**), C (renommages : attend les noms de l'utilisateur), D partiel (restyler `src/components/feedback/*`, `ThemedBottomSheet`, toasts ; décider du sort des champs Station / Note), E (relecture malagasy de l'app **et du site**), F (renseigner `config.js`, domaine de `og:image`, choisir l'hébergement, `git remote add origin https://github.com/My-conso/website.git` puis push), G (build EAS et diffusion de l'APK).
+
+### Correctif du 12 novembre (après la question « as-tu refait le design ? »)
+- Premier lancement, étape 3 : « Ajouter mon premier plein » crée la moto **puis ouvre directement le formulaire de plein** (comme la maquette). Pour cela `Onboarding` est maintenant un écran de la pile (écrans conditionnels selon `onboardingDone`) et `navigateWhenReady` (testé) navigue dès que `FuelForm` existe. À vérifier sur téléphone : après le formulaire, le retour ramène à l'Accueil.
+- Écarts restants avec la maquette : voir la liste donnée dans la conversation (avatar à l'Accueil, Station / Note retirés, écran d'édition de la devise et du seuil, 10 barres max, sélecteur de date natif sur iPhone).

@@ -8,6 +8,8 @@ export type TabParamList = {
 };
 
 export type RootStackParamList = {
+   /** First launch only: language → bike → welcome */
+   Onboarding: undefined;
    Tabs: NavigatorScreenParams<TabParamList> | undefined;
    /** No entryId → new fill-up, entryId → edit */
    FuelForm: { entryId?: string } | undefined;

@@ -9,6 +9,7 @@ import { VehicleFormScreen } from '@/src/features/settings/screens/vehicle-form.
 import { SettingEditScreen } from '@/src/features/settings/screens/setting-edit.screen';
 import { RootStackParamList } from './types';
 import { TabNavigator } from './tab-navigator';
+import { navigationRef } from './navigation-ref';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -31,18 +32,20 @@ export function RootNavigator() {
    const onboardingDone = useFuelStore(s => s.onboardingDone);
 
    return (
-      <NavigationContainer theme={navigationTheme}>
-         {onboardingDone ? (
-            <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.background } }}>
-               <Stack.Screen name="Tabs" component={TabNavigator} />
-               <Stack.Screen name="FuelForm" component={FuelFormScreen} options={{ presentation: 'modal' }} />
-               <Stack.Screen name="VehicleForm" component={VehicleFormScreen} options={{ presentation: 'modal' }} />
-               <Stack.Screen name="SettingEdit" component={SettingEditScreen} options={{ presentation: 'modal' }} />
-            </Stack.Navigator>
-         ) : (
-            // First launch: nothing else is reachable until the language and the bike are set
-            <OnboardingScreen />
-         )}
+      <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+         <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.background } }}>
+            {onboardingDone ? (
+               <>
+                  <Stack.Screen name="Tabs" component={TabNavigator} />
+                  <Stack.Screen name="FuelForm" component={FuelFormScreen} options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="VehicleForm" component={VehicleFormScreen} options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="SettingEdit" component={SettingEditScreen} options={{ presentation: 'modal' }} />
+               </>
+            ) : (
+               // First launch: nothing else is reachable until the language and the bike are set
+               <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ gestureEnabled: false }} />
+            )}
+         </Stack.Navigator>
       </NavigationContainer>
    );
 }

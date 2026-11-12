@@ -51,7 +51,7 @@ GestureHandlerRootView → SafeAreaProvider → ThemeProvider
 
 ### Navigation
 
-[src/navigation/root-navigator.tsx](src/navigation/root-navigator.tsx) renders either the **first-launch flow** (`OnboardingScreen`: language → bike → welcome, shown once while `onboardingDone` is false in the store) or a native stack: `Tabs` ([tab-navigator.tsx](src/navigation/tab-navigator.tsx): Home, History, Stats, Settings, with the custom floating `TabBar` whose centre "+" opens the fill-up form) and the modals `FuelForm` (add/edit a fill-up, `entryId` param = edit), `VehicleForm` (add/edit a vehicle) and `SettingEdit` (currency or alert threshold). No authentication, no backend: the app is 100 % offline.
+[src/navigation/root-navigator.tsx](src/navigation/root-navigator.tsx) is a native stack whose screens depend on the store's `onboardingDone`: while false only the **first-launch flow** exists (`Onboarding`: language → bike → welcome, ends by creating the bike and opening `FuelForm` through `navigateWhenReady` from [navigation-ref.ts](src/navigation/navigation-ref.ts)); afterwards: `Tabs` ([tab-navigator.tsx](src/navigation/tab-navigator.tsx): Home, History, Stats, Settings, with the custom floating `TabBar` whose centre "+" opens the fill-up form) and the modals `FuelForm` (add/edit a fill-up, `entryId` param = edit), `VehicleForm` (add/edit a vehicle) and `SettingEdit` (currency or alert threshold). No authentication, no backend: the app is 100 % offline.
 
 ### Key Providers
 

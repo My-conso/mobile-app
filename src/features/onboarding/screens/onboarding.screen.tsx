@@ -14,6 +14,7 @@ import { useFuelStore } from '@/src/features/fuel/store';
 import { vehicleName } from '@/src/features/fuel/types';
 import { validateVehicleDraft, type VehicleDraftInput } from '@/src/lib/validation';
 import type { LanguageCodeSupportedT } from '@/src/i18n/types';
+import { navigateWhenReady } from '@/src/navigation/navigation-ref';
 import { cn } from '@/src/utils/tailwind';
 import { ScooterIllustration } from '../components/scooter-illustration';
 
@@ -64,7 +65,11 @@ export function OnboardingScreen() {
       }
    };
 
-   const finish = () => completeOnboarding(result.value);
+   // Creates the bike, then opens the first fill-up form straight away (the home screen stays behind it)
+   const finish = () => {
+      completeOnboarding(result.value);
+      navigateWhenReady('FuelForm');
+   };
 
    return (
       <Screen withKeyboardAvoiding withSmallPadding={false}>

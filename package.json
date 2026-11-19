@@ -12,6 +12,7 @@
       "web": "npx expo start --web",
       "doctor": "npx expo-doctor",
       "fix": "npx expo install --check",
+      "release": "bash scripts/release.sh",
       "typecheck": "tsc --noEmit",
       "lint": "eslint .",
       "test": "jest",

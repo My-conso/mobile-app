@@ -41,6 +41,7 @@ jobs:
         with:
           repository: ${{ env.WEBSITE_REPO }}
           token: ${{ secrets.WEBSITE_PUSH_TOKEN }}
+          ref: main # the branch Cloudflare builds from
           path: website
       - name: Update app-info.ts (version, before build)
         run: |

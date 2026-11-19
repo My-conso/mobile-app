@@ -86,92 +86,94 @@
     * overconsumption alerts and deletion; text contrast >= 4.5:1.
     */
 
-   /* --- DARK MODE (the only look) --- */
-   @variant dark {
-      /* Backgrounds */
-      --color-background: #0f1012; /* Nuit : screen background */
-      --color-background-secondary: #212428; /* Surface haute : fields, pills */
-      --color-card: #17191c; /* Surface : cards */
-      --color-card-hover: #212428;
+   :root {
+      /* --- DARK MODE (the only look) --- */
+      @variant dark {
+         /* Backgrounds */
+         --color-background: #0f1012; /* Nuit : screen background */
+         --color-background-secondary: #212428; /* Surface haute : fields, pills */
+         --color-card: #17191c; /* Surface : cards */
+         --color-card-hover: #212428;
 
-      /* Text */
-      --color-foreground: #f4f5f0;
-      --color-foreground-secondary: #a1a5ac;
-      --color-foreground-muted: #858a93;
-      --color-foreground-faint: #4a4e55; /* dimmed digits, unchecked rings */
-      --color-foreground-inverse: #0f1012; /* text on neon */
+         /* Text */
+         --color-foreground: #f4f5f0;
+         --color-foreground-secondary: #a1a5ac;
+         --color-foreground-muted: #858a93;
+         --color-foreground-faint: #4a4e55; /* dimmed digits, unchecked rings */
+         --color-foreground-inverse: #0f1012; /* text on neon */
 
-      /* Borders */
-      --color-border: #2c2f34;
-      --color-border-subtle: #1e2024;
+         /* Borders */
+         --color-border: #2c2f34;
+         --color-border-subtle: #1e2024;
 
-      /* Brand: Neon (primary action, key figure, positive trend only) */
-      --color-primary: #c5f25a;
-      --color-primary-hover: #a8d43f;
-      --color-primary-soft: #2c3323; /* Neon voile : active background */
+         /* Brand: Neon (primary action, key figure, positive trend only) */
+         --color-primary: #c5f25a;
+         --color-primary-hover: #a8d43f;
+         --color-primary-soft: #2c3323; /* Neon voile : active background */
 
-      /* Accent: Ambre (attention, pending) */
-      --color-accent: #f2b84b;
-      --color-accent-hover: #d9a23a;
-      --color-accent-soft: #332a14;
+         /* Accent: Ambre (attention, pending) */
+         --color-accent: #f2b84b;
+         --color-accent-hover: #d9a23a;
+         --color-accent-soft: #332a14;
 
-      /* Semantic colors: one for "attention" (amber), one for "danger" (coral) */
-      --color-danger: #ff6b5e;
-      --color-danger-soft: #3a1f1d;
-      --color-success: #c5f25a;
-      --color-success-soft: #2c3323;
-      --color-warning: #f2b84b;
-      --color-warning-soft: #332a14;
-      --color-info: #a1a5ac;
-      --color-info-soft: #212428;
+         /* Semantic colors: one for "attention" (amber), one for "danger" (coral) */
+         --color-danger: #ff6b5e;
+         --color-danger-soft: #3a1f1d;
+         --color-success: #c5f25a;
+         --color-success-soft: #2c3323;
+         --color-warning: #f2b84b;
+         --color-warning-soft: #332a14;
+         --color-info: #a1a5ac;
+         --color-info-soft: #212428;
 
-      /* Rating (unused) */
-      --color-rating: #f2b84b;
-      --color-rating-inactive: #2c2f34;
-   }
+         /* Rating (unused) */
+         --color-rating: #f2b84b;
+         --color-rating-inactive: #2c2f34;
+      }
 
-   /* --- LIGHT MODE: identical to dark on purpose (see above) --- */
-   @variant light {
-      /* Backgrounds */
-      --color-background: #0f1012; /* Nuit : screen background */
-      --color-background-secondary: #212428; /* Surface haute : fields, pills */
-      --color-card: #17191c; /* Surface : cards */
-      --color-card-hover: #212428;
+      /* --- LIGHT MODE: identical to dark on purpose (see above) --- */
+      @variant light {
+         /* Backgrounds */
+         --color-background: #0f1012; /* Nuit : screen background */
+         --color-background-secondary: #212428; /* Surface haute : fields, pills */
+         --color-card: #17191c; /* Surface : cards */
+         --color-card-hover: #212428;
 
-      /* Text */
-      --color-foreground: #f4f5f0;
-      --color-foreground-secondary: #a1a5ac;
-      --color-foreground-muted: #858a93;
-      --color-foreground-faint: #4a4e55; /* dimmed digits, unchecked rings */
-      --color-foreground-inverse: #0f1012; /* text on neon */
+         /* Text */
+         --color-foreground: #f4f5f0;
+         --color-foreground-secondary: #a1a5ac;
+         --color-foreground-muted: #858a93;
+         --color-foreground-faint: #4a4e55; /* dimmed digits, unchecked rings */
+         --color-foreground-inverse: #0f1012; /* text on neon */
 
-      /* Borders */
-      --color-border: #2c2f34;
-      --color-border-subtle: #1e2024;
+         /* Borders */
+         --color-border: #2c2f34;
+         --color-border-subtle: #1e2024;
 
-      /* Brand: Neon (primary action, key figure, positive trend only) */
-      --color-primary: #c5f25a;
-      --color-primary-hover: #a8d43f;
-      --color-primary-soft: #2c3323; /* Neon voile : active background */
+         /* Brand: Neon (primary action, key figure, positive trend only) */
+         --color-primary: #c5f25a;
+         --color-primary-hover: #a8d43f;
+         --color-primary-soft: #2c3323; /* Neon voile : active background */
 
-      /* Accent: Ambre (attention, pending) */
-      --color-accent: #f2b84b;
-      --color-accent-hover: #d9a23a;
-      --color-accent-soft: #332a14;
+         /* Accent: Ambre (attention, pending) */
+         --color-accent: #f2b84b;
+         --color-accent-hover: #d9a23a;
+         --color-accent-soft: #332a14;
 
-      /* Semantic colors: one for "attention" (amber), one for "danger" (coral) */
-      --color-danger: #ff6b5e;
-      --color-danger-soft: #3a1f1d;
-      --color-success: #c5f25a;
-      --color-success-soft: #2c3323;
-      --color-warning: #f2b84b;
-      --color-warning-soft: #332a14;
-      --color-info: #a1a5ac;
-      --color-info-soft: #212428;
+         /* Semantic colors: one for "attention" (amber), one for "danger" (coral) */
+         --color-danger: #ff6b5e;
+         --color-danger-soft: #3a1f1d;
+         --color-success: #c5f25a;
+         --color-success-soft: #2c3323;
+         --color-warning: #f2b84b;
+         --color-warning-soft: #332a14;
+         --color-info: #a1a5ac;
+         --color-info-soft: #212428;
 
-      /* Rating (unused) */
-      --color-rating: #f2b84b;
-      --color-rating-inactive: #2c2f34;
+         /* Rating (unused) */
+         --color-rating: #f2b84b;
+         --color-rating-inactive: #2c2f34;
+      }
    }
 }
 

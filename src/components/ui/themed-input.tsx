@@ -1,7 +1,13 @@
-import React, { useState, forwardRef, useRef } from 'react';
+import React, { useState, forwardRef, useRef, useEffect } from 'react';
 import { TextInput, TextInputProps, TouchableOpacity } from 'react-native';
 import { KeyboardController, useKeyboardHandler } from 'react-native-keyboard-controller';
-import { useSharedValue } from 'react-native-reanimated';
+import Animated, {
+   useSharedValue,
+   useAnimatedStyle,
+   withSequence,
+   withTiming,
+   ReduceMotion,
+} from 'react-native-reanimated';
 import { ThemedView } from './themed-view';
 import { ThemedText } from './themed-text';
 import { ThemedIcon } from './themed-icon'; // Import ThemedIcon
@@ -61,6 +67,8 @@ export interface ThemedInputProps extends Omit<TextInputProps, 'placeholder'> {
    helperClassName?: string;
    /** Callbacks */
    onClear?: () => void;
+   /** Pulses a highlight ring around the field (not the label) when it turns true */
+   pulse?: boolean;
    /** Test ID */
    testID?: string;
 }
@@ -211,6 +219,7 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
          onBlur,
          onChangeText,
          testID,
+         pulse = false,
 
          // Other TextInput props
          ...props
@@ -222,6 +231,20 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
       const [text, setText] = useState(props.value || props.defaultValue || '');
       const inputRef = useRef<TextInput>(null);
       const keyboardHeight = useSharedValue(0);
+
+      // Highlight ring: fades in and out twice
+      const ring = useSharedValue(0);
+      useEffect(() => {
+         if (!pulse) return;
+         const timing = { duration: 280, reduceMotion: ReduceMotion.System };
+         ring.value = withSequence(
+            withTiming(1, timing),
+            withTiming(0.25, timing),
+            withTiming(1, timing),
+            withTiming(0, { ...timing, duration: 600 })
+         );
+      }, [pulse, ring]);
+      const ringStyle = useAnimatedStyle(() => ({ opacity: ring.value }));
 
       // Track keyboard height (optional, can be used for animations)
       useKeyboardHandler({
@@ -236,10 +259,11 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
       const dangerColor = useThemeColor('--color-danger', 'danger');
       const successColor = useThemeColor('--color-success', 'success');
       const warningColor = useThemeColor('--color-warning', 'warning');
-      const foregroundSecondary =
-         useThemeColor('--color-foreground-secondary', 'foregroundSecondary');
-      const foregroundMuted =
-         useThemeColor('--color-foreground-muted', 'foregroundMuted');
+      const foregroundSecondary = useThemeColor(
+         '--color-foreground-secondary',
+         'foregroundSecondary'
+      );
+      const foregroundMuted = useThemeColor('--color-foreground-muted', 'foregroundMuted');
 
       // Determine current state
       const currentState = error ? 'error' : success ? 'success' : warning ? 'warning' : state;
@@ -314,10 +338,7 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
             {/* Label with better styling */}
             {label && (
                <ThemedView className="flex-row items-center justify-between mb-2">
-                  <ThemedText
-                     variant="caption"
-                     color="secondary"
-                     className={labelClassName}>
+                  <ThemedText variant="caption" color="secondary" className={labelClassName}>
                      {label}
                      {required && <ThemedText color="danger"> *</ThemedText>}
                   </ThemedText>
@@ -343,6 +364,13 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
                   isSearch && isFocused && 'shadow-md',
                   isSearch && 'pr-2'
                )}>
+               {pulse ? (
+                  <Animated.View
+                     pointerEvents="none"
+                     style={ringStyle}
+                     className="border-primary absolute -inset-[3px] rounded-[15px] border-2"
+                  />
+               ) : null}
                {/* Left icon with better styling */}
                {leftIcon && (
                   <ThemedView bg="transparent" className="items-center justify-center">

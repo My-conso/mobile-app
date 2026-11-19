@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, type ScrollView, type TextInput } from 'react-native';
+import { Alert, type ScrollView } from 'react-native';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
@@ -60,10 +60,9 @@ export function VehicleFormScreen() {
 
    const goBack = useGoBack();
 
-   // Opened from "tell me the tank size": scroll down to the tank field, highlight it, then focus it
+   // Opened from "tell me the tank size": scroll down to the tank field and highlight it
    const focusTank = route.params?.focus === 'tank';
    const scrollRef = useRef<ScrollView | null>(null);
-   const tankRef = useRef<TextInput>(null);
    const [tankY, setTankY] = useState<number | null>(null);
    const [highlightTank, setHighlightTank] = useState(false);
    const focusDone = useRef(false);
@@ -75,10 +74,8 @@ export function VehicleFormScreen() {
          scrollRef.current?.scrollTo({ y: Math.max(0, tankY - 140), animated: true });
          setHighlightTank(true);
       }, 450);
-      const focusTimer = setTimeout(() => tankRef.current?.focus(), 1000);
       return () => {
          clearTimeout(scrollTimer);
-         clearTimeout(focusTimer);
       };
    }, [focusTank, tankY]);
 
@@ -197,7 +194,6 @@ export function VehicleFormScreen() {
                draft={draft}
                onChange={patch => setDraft(d => ({ ...d, ...patch }))}
                errors={submitted ? result.errors : undefined}
-               tankRef={tankRef}
                onTankLayout={setTankY}
                highlightTank={highlightTank}
             />

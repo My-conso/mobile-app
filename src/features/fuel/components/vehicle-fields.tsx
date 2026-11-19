@@ -1,13 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import type { TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, {
-   useAnimatedStyle,
-   useSharedValue,
-   withSequence,
-   withTiming,
-   ReduceMotion,
-} from 'react-native-reanimated';
 import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedInput } from '@/src/components/ui/themed-input';
 import type { VehicleDraftErrors, VehicleDraftInput } from '@/src/lib/validation';
@@ -21,7 +14,7 @@ interface VehicleFieldsProps {
    tankRef?: React.Ref<TextInput>;
    /** Reports the tank field's vertical position inside the parent's scroll content */
    onTankLayout?: (y: number) => void;
-   /** Pulses a highlight ring around the tank field when it turns true */
+   /** Pulses a highlight ring around the tank input when it turns true */
    highlightTank?: boolean;
 }
 
@@ -50,22 +43,6 @@ export function VehicleFields({
       if (rootY.current != null && tankY.current != null)
          onTankLayout?.(rootY.current + tankY.current);
    };
-
-   // Highlight ring: fades in and out twice
-   const ring = useSharedValue(0);
-   useEffect(() => {
-      if (!highlightTank) return;
-      ring.value = withSequence(
-         withTiming(1, { duration: 280, reduceMotion: ReduceMotion.System }),
-         withTiming(0.25, { duration: 280, reduceMotion: ReduceMotion.System }),
-         withTiming(1, { duration: 280, reduceMotion: ReduceMotion.System }),
-         withTiming(0, { duration: 600, reduceMotion: ReduceMotion.System })
-      );
-   }, [highlightTank, ring]);
-   const ringStyle = useAnimatedStyle(() => ({
-      opacity: ring.value,
-      transform: [{ scale: 0.985 + ring.value * 0.015 }],
-   }));
 
    return (
       <ThemedView
@@ -121,13 +98,9 @@ export function VehicleFields({
                tankY.current = e.nativeEvent.layout.y;
                report();
             }}>
-            <Animated.View
-               pointerEvents="none"
-               style={ringStyle}
-               className="border-primary absolute -inset-2 rounded-2xl border-2"
-            />
             <ThemedInput
                ref={tankRef}
+               pulse={highlightTank}
                label={optional(t('onboarding.tank'))}
                placeholder="—"
                value={draft.tank}

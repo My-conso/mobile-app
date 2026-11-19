@@ -16,5 +16,5 @@ export type RootStackParamList = {
    /** No vehicleId → new vehicle, vehicleId → edit; focus → scroll to that field and highlight it */
    VehicleForm: { vehicleId?: string; focus?: 'tank' } | undefined;
    /** One app-wide preference on its own screen */
-   SettingEdit: { kind: 'currency' | 'alert' };
+   SettingEdit: { kind: 'currency' | 'alert' | 'price' };
 };

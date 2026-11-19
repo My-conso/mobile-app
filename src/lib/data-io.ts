@@ -169,6 +169,7 @@ export function parseBackupJson(text: string): ParseResult {
       currency: optStr(s.currency) ?? DEFAULT_SETTINGS.currency,
       alertThresholdPercent:
          isNum(s.alertThresholdPercent) && s.alertThresholdPercent > 0 ? s.alertThresholdPercent : DEFAULT_SETTINGS.alertThresholdPercent,
+      ...(isNum(s.fuelPricePerLiter) && s.fuelPricePerLiter > 0 ? { fuelPricePerLiter: s.fuelPricePerLiter } : {}),
    };
    const activeVehicleId = typeof raw.activeVehicleId === 'string' && vehicleIds.has(raw.activeVehicleId) ? raw.activeVehicleId : (vehicles[0]?.id ?? null);
    return { ok: true, entries, vehicles, activeVehicleId, settings };

@@ -1,4 +1,11 @@
-import { formatDate, formatDateLong, formatMoney, formatNumber, parseDecimal } from '../format';
+import {
+   formatDate,
+   formatDateLong,
+   formatInput,
+   formatMoney,
+   formatNumber,
+   parseDecimal,
+} from '../format';
 
 describe('format', () => {
    it('argent : espace pour les milliers, sans décimales', () => {
@@ -23,5 +30,14 @@ describe('format', () => {
       const iso = new Date(2026, 2, 30, 12).toISOString();
       expect(formatDate(iso)).toBe('30 mars 2026');
       expect(formatDateLong(iso)).toBe('lundi 30 mars 2026');
+   });
+
+   it('formats numeric fields while typing', () => {
+      expect(formatInput('12500')).toBe('12 500');
+      expect(formatInput('1 234 567')).toBe('1 234 567');
+      expect(formatInput('4500.5')).toBe('4 500,5');
+      expect(formatInput('4,')).toBe('4,');
+      expect(formatInput('abc')).toBe('');
+      expect(parseDecimal(formatInput('12500,5'))).toBe(12500.5);
    });
 });

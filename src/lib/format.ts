@@ -39,7 +39,19 @@ export function formatNumber(value: number, decimals = 0): string {
    return sign + grouped + (dec ? `,${dec}` : '');
 }
 
-export const formatMoney = (value: number, currency: string) => `${formatNumber(value, 0)} ${currency}`;
+/**
+ * Live formatting of a numeric text field while typing: groups the thousands ("12500" → "12 500")
+ * and keeps the decimal part as typed ("4,5"). `parseDecimal` reads it back (spaces are ignored).
+ */
+export function formatInput(text: string): string {
+   const cleaned = text.replace(/[^\d.,]/g, '').replace(/\./g, ',');
+   const [int, ...rest] = cleaned.split(',');
+   const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+   return rest.length ? `${grouped},${rest.join('')}` : grouped;
+}
+
+export const formatMoney = (value: number, currency: string) =>
+   `${formatNumber(value, 0)} ${currency}`;
 export const formatL100 = (v: number) => formatNumber(v, 2);
 export const formatKmPerL = (v: number) => formatNumber(v, 1);
 export const formatKm = (v: number) => formatNumber(v, 0);

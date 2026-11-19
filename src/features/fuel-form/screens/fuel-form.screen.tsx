@@ -21,12 +21,10 @@ import { VehicleAvatar } from '@/src/features/fuel/components/vehicle-avatar';
 import { useActiveVehicle, useConsumption, useFuelStore } from '@/src/features/fuel/store';
 import type { Vehicle } from '@/src/features/fuel/types';
 import { previewEntry, sortEntries } from '@/src/lib/consumption';
-import { formatKm, formatL100, formatNumber, parseDecimal } from '@/src/lib/format';
+import { formatInput, formatKm, formatL100, formatNumber, parseDecimal } from '@/src/lib/format';
 import { round2, validateDraft, type FormDraft } from '@/src/lib/validation';
 import type { RootStackParamList } from '@/src/navigation/types';
 import { useGoBack } from '@/src/navigation/use-go-back';
-
-type PriceMode = 'per_liter' | 'total';
 
 /** Empty string → null, unparsable → 0 (so validation flags it), otherwise the number. */
 function numOrNull(text: string): number | null {
@@ -34,7 +32,8 @@ function numOrNull(text: string): number | null {
    return parseDecimal(text) ?? 0;
 }
 
-const plain = (n: number, d: number) => formatNumber(n, d).replace(/ /g, '');
+// Grouped like the display (12 500), so the fields look the same while editing
+const plain = (n: number, d: number) => formatNumber(n, d);
 
 /** No vehicle yet → there is nothing to attach a fill-up to: go add one first. */
 function RedirectToVehicleForm() {
@@ -47,11 +46,16 @@ function RedirectToVehicleForm() {
 
 export function FuelFormScreen() {
    const activeVehicle = useActiveVehicle();
-   return activeVehicle ? <FuelFormInner activeVehicle={activeVehicle} /> : <RedirectToVehicleForm />;
+   return activeVehicle ? (
+      <FuelFormInner activeVehicle={activeVehicle} />
+   ) : (
+      <RedirectToVehicleForm />
+   );
 }
 
 function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
    const { t } = useTranslation('fuel');
+   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
    const route = useRoute<RouteProp<RootStackParamList, 'FuelForm'>>();
    const entryId = route.params?.entryId;
 
@@ -68,20 +72,16 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
    const existing = useMemo(() => allEntries.find(e => e.id === entryId), [allEntries, entryId]);
    // Editing keeps the entry's own vehicle; a new fill-up goes to the active vehicle
    const vehicle = (existing && vehicles.find(v => v.id === existing.vehicleId)) || activeVehicle;
-   const entries = useMemo(() => allEntries.filter(e => e.vehicleId === vehicle.id), [allEntries, vehicle.id]);
+   const entries = useMemo(
+      () => allEntries.filter(e => e.vehicleId === vehicle.id),
+      [allEntries, vehicle.id]
+   );
    const isEdit = !!existing;
 
    const [date, setDate] = useState(() => (existing ? new Date(existing.date) : new Date()));
    const [odometer, setOdometer] = useState(existing ? plain(existing.odometerKm, 0) : '');
-   const [liters, setLiters] = useState(existing ? plain(existing.liters, 2).replace(/,00$/, '') : '');
-   // An imported entry may only have a total: open it in "total" mode so nothing is lost on save
-   const [priceMode, setPriceMode] = useState<PriceMode>(existing && !existing.pricePerLiter && existing.totalCost ? 'total' : 'per_liter');
-   const [priceText, setPriceText] = useState(
-      existing?.pricePerLiter
-         ? plain(existing.pricePerLiter, 2).replace(/,00$/, '')
-         : existing?.totalCost
-           ? plain(existing.totalCost, 0)
-           : '',
+   const [liters, setLiters] = useState(
+      existing ? plain(existing.liters, 2).replace(/,00$/, '') : ''
    );
    const [isFullTank, setIsFullTank] = useState(existing?.isFullTank ?? true);
    const [missedPrevious, setMissedPrevious] = useState(existing?.missedPrevious ?? false);
@@ -94,24 +94,29 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
       return others.length ? others[others.length - 1].odometerKm : null;
    }, [entries, entryId]);
 
-   // Resolve the two price values from whichever one the user typed
    const litersNum = numOrNull(liters);
-   const priceNum = numOrNull(priceText);
+
+   // The price is never typed here: a new fill-up uses the usual price from the settings, an edited one
+   // keeps its own price (history must not change when the settings do).
    const resolved = useMemo(() => {
-      if (priceNum == null) return { pricePerLiter: null, totalCost: null };
-      if (priceMode === 'per_liter') {
-         return { pricePerLiter: priceNum, totalCost: litersNum && litersNum > 0 && priceNum > 0 ? priceNum * litersNum : null };
+      const perLiter = existing
+         ? (existing.pricePerLiter ?? null)
+         : (settings.fuelPricePerLiter ?? null);
+      if (perLiter != null) {
+         return {
+            pricePerLiter: perLiter,
+            totalCost: litersNum && litersNum > 0 ? perLiter * litersNum : null,
+         };
       }
-      return { pricePerLiter: litersNum && litersNum > 0 && priceNum > 0 ? priceNum / litersNum : null, totalCost: priceNum };
-   }, [priceNum, priceMode, litersNum]);
+      return { pricePerLiter: null, totalCost: existing?.totalCost ?? null };
+   }, [existing, settings.fuelPricePerLiter, litersNum]);
 
    const draft: FormDraft = {
       date: date.toISOString(),
       odometerKm: numOrNull(odometer),
       liters: litersNum,
-      // keep the raw invalid value (0) so validation can flag it
-      pricePerLiter: priceMode === 'per_liter' ? priceNum : resolved.pricePerLiter,
-      totalCost: priceMode === 'total' ? priceNum : resolved.totalCost,
+      pricePerLiter: resolved.pricePerLiter,
+      totalCost: resolved.totalCost,
       isFullTank,
       missedPrevious,
    };
@@ -119,11 +124,17 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
    const validation = useMemo(
       () => validateDraft(draft, entries, vehicle, entryId),
       // eslint-disable-next-line react-hooks/exhaustive-deps -- draft is rebuilt each render from the state below
-      [date, odometer, liters, priceText, priceMode, isFullTank, missedPrevious, entries, vehicle, entryId],
+      [date, odometer, liters, isFullTank, missedPrevious, entries, vehicle, entryId]
    );
 
    const preview = useMemo(() => {
-      if (draft.odometerKm == null || draft.liters == null || !(draft.odometerKm > 0) || !(draft.liters > 0)) return null;
+      if (
+         draft.odometerKm == null ||
+         draft.liters == null ||
+         !(draft.odometerKm > 0) ||
+         !(draft.liters > 0)
+      )
+         return null;
       return previewEntry(
          entries,
          {
@@ -136,10 +147,10 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
             pricePerLiter: draft.pricePerLiter ?? undefined,
             totalCost: draft.totalCost ?? undefined,
          },
-         entryId,
+         entryId
       );
       // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
-   }, [date, odometer, liters, priceText, priceMode, isFullTank, missedPrevious, entries, entryId]);
+   }, [date, odometer, liters, isFullTank, missedPrevious, entries, entryId]);
 
    const fieldError = (e?: { code: string; params?: Record<string, string | number> }) =>
       submitted && e
@@ -204,11 +215,6 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
          },
       ]);
 
-   const switchPriceMode = () => {
-      setPriceMode(m => (m === 'per_liter' ? 'total' : 'per_liter'));
-      setPriceText('');
-   };
-
    // What the live calculation says about this fill-up
    const role = preview?.info.role;
    const segment = preview?.info.segment;
@@ -225,14 +231,15 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
               ? t('form.info_reference')
               : null;
 
-   const computed =
-      priceMode === 'per_liter'
-         ? resolved.totalCost != null && resolved.totalCost > 0
-            ? t('form.total_value', { value: `${formatNumber(resolved.totalCost, 0)} ${settings.currency}` })
-            : null
-         : resolved.pricePerLiter != null && resolved.pricePerLiter > 0
-           ? t('form.per_liter_value', { value: `${formatNumber(resolved.pricePerLiter, 0)} ${settings.currency}` })
-           : null;
+   // Cost of this fill-up from the usual price (shown under the liters field)
+   const costText =
+      resolved.totalCost != null && resolved.totalCost > 0 && resolved.pricePerLiter != null
+         ? t('form.cost_estimate', {
+              total: `${formatNumber(resolved.totalCost, 0)} ${settings.currency}`,
+              price: `${formatNumber(resolved.pricePerLiter, 2).replace(/,00$/, '')} ${settings.currency}`,
+           })
+         : null;
+   const priceMissing = !existing && !settings.fuelPricePerLiter;
 
    if (savedId) {
       return <SavedConfirmation entryId={savedId} onDone={goBack} />;
@@ -247,70 +254,77 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
             right={vehicles.length > 1 ? <VehicleAvatar vehicle={vehicle} size="md" /> : undefined}
          />
 
-         <ScrollContainer contentContainerClassName="gap-3.5 px-5 pt-3 pb-4" keyboardShouldPersistTaps="handled">
+         <ScrollContainer
+            contentContainerClassName="gap-3.5 px-5 pt-3 pb-4"
+            keyboardShouldPersistTaps="handled">
             <DateTimeField label={t('form.date')} value={date} onChange={setDate} />
 
             <ThemedInput
                label={t('form.odometer')}
                value={odometer}
-               onChangeText={setOdometer}
+               onChangeText={v => setOdometer(formatInput(v))}
                keyboardType="number-pad"
                size="lg"
                numeric
                suffix={t('unit.km')}
                error={fieldError(validation.errors.odometerKm)}
-               helperText={lastKnownKm != null ? t('form.odometer_last', { km: formatKm(lastKnownKm) }) : t('form.odometer_help')}
+               helperText={
+                  lastKnownKm != null
+                     ? t('form.odometer_last', { km: formatKm(lastKnownKm) })
+                     : t('form.odometer_help')
+               }
             />
 
-            <Row gap="md" bg="transparent" items="start">
-               <ThemedView bg="transparent" className="flex-1">
-                  <ThemedInput
-                     label={t('form.liters')}
-                     value={liters}
-                     onChangeText={setLiters}
-                     keyboardType="decimal-pad"
-                     numeric
-                     suffix={t('unit.l')}
-                     error={fieldError(validation.errors.liters)}
-                  />
-               </ThemedView>
-               <ThemedView bg="transparent" className="flex-1">
-                  <ThemedInput
-                     label={priceMode === 'per_liter' ? t('form.price_per_liter') : t('form.price_total')}
-                     value={priceText}
-                     onChangeText={setPriceText}
-                     keyboardType="decimal-pad"
-                     numeric
-                     suffix={settings.currency}
-                     error={fieldError(validation.errors.price)}
-                  />
-               </ThemedView>
-            </Row>
-            <Row justify="between" items="center" gap="md" bg="transparent" className="-mt-1">
-               <ThemedPressable onPress={switchPriceMode} className="min-h-11 justify-center">
+            <ThemedInput
+               label={t('form.liters')}
+               value={liters}
+               onChangeText={v => setLiters(formatInput(v))}
+               keyboardType="decimal-pad"
+               size="lg"
+               numeric
+               suffix={t('unit.l')}
+               error={fieldError(validation.errors.liters)}
+               helperText={costText ?? undefined}
+            />
+            {priceMissing ? (
+               <ThemedPressable
+                  onPress={() => navigation.navigate('SettingEdit', { kind: 'price' })}
+                  className="-mt-1 min-h-11 justify-center">
                   <ThemedText variant="caption" weight="medium" color="primary">
-                     {priceMode === 'per_liter' ? t('form.to_total') : t('form.to_per_liter')}
+                     {t('form.price_missing')}
                   </ThemedText>
                </ThemedPressable>
-               {computed ? (
-                  <ThemedText variant="caption" color="secondary">
-                     {computed}
-                  </ThemedText>
-               ) : null}
-            </Row>
+            ) : null}
 
             <RowGroup>
-               <SwitchRow label={t('form.full_tank')} help={t('form.full_tank_help')} value={isFullTank} onValueChange={setIsFullTank} />
-               <SwitchRow label={t('form.missed')} value={missedPrevious} onValueChange={setMissedPrevious} />
+               <SwitchRow
+                  label={t('form.full_tank')}
+                  help={t('form.full_tank_help')}
+                  value={isFullTank}
+                  onValueChange={setIsFullTank}
+               />
+               <SwitchRow
+                  label={t('form.missed')}
+                  value={missedPrevious}
+                  onValueChange={setMissedPrevious}
+               />
             </RowGroup>
 
             {showCalc && segment ? (
-               <Row items="center" justify="between" gap="md" bg="transparent" rounded="lg" className="bg-primary-soft p-4">
+               <Row
+                  items="center"
+                  justify="between"
+                  gap="md"
+                  bg="transparent"
+                  rounded="lg"
+                  className="bg-primary-soft p-4">
                   <ThemedView bg="transparent" gap="xs" className="flex-1">
                      <ThemedText variant="caption" color="primary">
                         {t('form.calc_title')}
                      </ThemedText>
-                     <ThemedText variant="body-small">{t('form.calc_distance', { km: formatKm(segment.distanceKm) })}</ThemedText>
+                     <ThemedText variant="body-small">
+                        {t('form.calc_distance', { km: formatKm(segment.distanceKm) })}
+                     </ThemedText>
                   </ThemedView>
                   <Row items="baseline" gap="xs" bg="transparent">
                      <ThemedText numeric weight="semibold" color="primary" className="text-[22px]">
@@ -322,7 +336,12 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
                   </Row>
                </Row>
             ) : infoText ? (
-               <Row gap="sm" items="start" bg="transparent" rounded="lg" className="border-border border border-dashed p-4">
+               <Row
+                  gap="sm"
+                  items="start"
+                  bg="transparent"
+                  rounded="lg"
+                  className="border-border border border-dashed p-4">
                   <ThemedIcon name="info" size="sm" color="warning" />
                   <ThemedText variant="caption" color="secondary" className="flex-1 leading-5">
                      {infoText}
@@ -331,7 +350,14 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
             ) : null}
 
             {isEdit ? (
-               <ThemedButton title={t('common.delete')} variant="outline" size="md" fullWidth textClassName="text-danger" onPress={onDelete} />
+               <ThemedButton
+                  title={t('common.delete')}
+                  variant="outline"
+                  size="md"
+                  fullWidth
+                  textClassName="text-danger"
+                  onPress={onDelete}
+               />
             ) : null}
          </ScrollContainer>
 
@@ -350,12 +376,18 @@ function SavedConfirmation({ entryId, onDone }: { entryId: string; onDone: () =>
    const average = result.summary.l100;
    const body =
       segment && average != null && result.info[entryId]?.role === 'segment'
-         ? t('form.saved_body', { l100: formatL100(segment.l100), km: formatKm(segment.distanceKm), avg: formatL100(average) })
+         ? t('form.saved_body', {
+              l100: formatL100(segment.l100),
+              km: formatKm(segment.distanceKm),
+              avg: formatL100(average),
+           })
          : null;
 
    return (
       <Screen withSmallPadding={false}>
-         <Animated.View entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)} className="flex-1 items-center justify-center gap-5 px-8">
+         <Animated.View
+            entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
+            className="flex-1 items-center justify-center gap-5 px-8">
             <Animated.View entering={ZoomIn.duration(420).reduceMotion(ReduceMotion.System)}>
                <ThemedView className="bg-primary size-22 items-center justify-center rounded-full">
                   <ThemedIcon name="check" customSize={44} color="inverse" strokeWidth={2.6} />
@@ -369,7 +401,13 @@ function SavedConfirmation({ entryId, onDone }: { entryId: string; onDone: () =>
                   </ThemedText>
                ) : null}
             </ThemedView>
-            <ThemedButton title={t('form.back_home')} variant="outline" size="md" className="self-center" onPress={onDone} />
+            <ThemedButton
+               title={t('form.back_home')}
+               variant="outline"
+               size="md"
+               className="self-center"
+               onPress={onDone}
+            />
          </Animated.View>
       </Screen>
    );

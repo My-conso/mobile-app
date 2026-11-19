@@ -126,7 +126,7 @@ export function VehicleFormScreen() {
       const count = entries.filter(e => e.vehicleId === vehicleId).length;
       Alert.alert(
          t('vehicle_form.delete_title', { name: vehicleName(existing) }),
-         t('vehicle_form.delete_text', { count }),
+         t('vehicle_form.delete_text', { count: formatNumber(count) }),
          [
             { text: t('common.cancel'), style: 'cancel' },
             {

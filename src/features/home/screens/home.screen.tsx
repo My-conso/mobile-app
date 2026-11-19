@@ -100,7 +100,7 @@ export function HomeScreen() {
                                     {formatKmPerL(summary.kmPerL ?? 0)} {t('unit.kml')}
                                  </ThemedText>
                                  <ThemedText variant="caption" color="muted">
-                                    {t('home.avg_detail', { count: summary.segmentCount, km: formatKm(summary.totalKm) })}
+                                    {t('home.avg_detail', { count: formatNumber(summary.segmentCount), km: formatKm(summary.totalKm) })}
                                  </ThemedText>
                               </ThemedView>
                               <MiniBars values={lastThree} label={t('home.bars_label', { values: lastThree.map(formatL100).join(', ') })} />

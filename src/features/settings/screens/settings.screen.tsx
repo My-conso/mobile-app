@@ -68,15 +68,25 @@ export function SettingsScreen() {
          {
             text: t('settings.export_json'),
             onPress: () =>
-               share(`tomo-${stamp}.json`, toBackupJson({ entries, vehicles, activeVehicleId, settings }), 'application/json'),
+               share(
+                  `tomo-${stamp}.json`,
+                  toBackupJson({ entries, vehicles, activeVehicleId, settings }),
+                  'application/json'
+               ),
          },
-         { text: t('settings.export_csv'), onPress: () => share(`tomo-${stamp}.csv`, toCsv(entries, vehicles), 'text/csv') },
+         {
+            text: t('settings.export_csv'),
+            onPress: () => share(`tomo-${stamp}.csv`, toCsv(entries, vehicles), 'text/csv'),
+         },
          { text: t('common.cancel'), style: 'cancel' },
       ]);
 
    const importBackup = async () => {
       try {
-         const res = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'text/plain', '*/*'], copyToCacheDirectory: true });
+         const res = await DocumentPicker.getDocumentAsync({
+            type: ['application/json', 'text/plain', '*/*'],
+            copyToCacheDirectory: true,
+         });
          if (res.canceled || !res.assets?.[0]) return;
          const text = await new File(res.assets[0].uri).text();
          const parsed = parseBackupJson(text);
@@ -84,25 +94,29 @@ export function SettingsScreen() {
             showToast('error', t('settings.import_error'));
             return;
          }
-         Alert.alert(t('settings.import_title'), t('settings.import_text', { count: parsed.entries.length }), [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-               text: t('common.confirm'),
-               style: 'destructive',
-               onPress: () => {
-                  // Photos aren't in the backup: keep the ones already on this device for the same vehicle ids
-                  const keepPhoto = (id: string) => vehicles.find(v => v.id === id)?.photoUri;
-                  replaceAll({
-                     entries: parsed.entries,
-                     vehicles: parsed.vehicles.map(v => ({ ...v, photoUri: keepPhoto(v.id) })),
-                     activeVehicleId: parsed.activeVehicleId,
-                     settings: parsed.settings,
-                     onboardingDone: true,
-                  });
-                  showToast('success', t('settings.import_done'));
+         Alert.alert(
+            t('settings.import_title'),
+            t('settings.import_text', { count: formatNumber(parsed.entries.length) }),
+            [
+               { text: t('common.cancel'), style: 'cancel' },
+               {
+                  text: t('common.confirm'),
+                  style: 'destructive',
+                  onPress: () => {
+                     // Photos aren't in the backup: keep the ones already on this device for the same vehicle ids
+                     const keepPhoto = (id: string) => vehicles.find(v => v.id === id)?.photoUri;
+                     replaceAll({
+                        entries: parsed.entries,
+                        vehicles: parsed.vehicles.map(v => ({ ...v, photoUri: keepPhoto(v.id) })),
+                        activeVehicleId: parsed.activeVehicleId,
+                        settings: parsed.settings,
+                        onboardingDone: true,
+                     });
+                     showToast('success', t('settings.import_done'));
+                  },
                },
-            },
-         ]);
+            ]
+         );
       } catch (e) {
          showError(e);
       }
@@ -140,32 +154,71 @@ export function SettingsScreen() {
             <ThemedText variant="h2">{t('settings.title')}</ThemedText>
 
             <SectionLabel>{t('settings.language')}</SectionLabel>
-            <SegmentedControl options={languages} value={language} onChange={code => i18next.changeLanguage(code)} />
+            <SegmentedControl
+               options={languages}
+               value={language}
+               onChange={code => i18next.changeLanguage(code)}
+            />
 
-            <SectionLabel>{vehicles.length > 1 ? t('settings.vehicles') : t('settings.vehicle_one')}</SectionLabel>
+            <SectionLabel>
+               {vehicles.length > 1 ? t('settings.vehicles') : t('settings.vehicle_one')}
+            </SectionLabel>
             <RowGroup>
                {vehicles.map(v => (
                   <ListRow
                      key={v.id}
                      label={vehicleName(v)}
-                     value={v.id === activeVehicleId && vehicles.length > 1 ? t('settings.active') : v.year ? String(v.year) : undefined}
+                     value={
+                        v.id === activeVehicleId && vehicles.length > 1
+                           ? t('settings.active')
+                           : v.year
+                             ? String(v.year)
+                             : undefined
+                     }
                      onPress={() => navigation.navigate('VehicleForm', { vehicleId: v.id })}
                   />
                ))}
                {activeVehicle ? (
                   <ListRow
                      label={t('settings.tank')}
-                     value={activeVehicle.tankCapacityLiters != null ? `${formatNumber(activeVehicle.tankCapacityLiters, 1).replace(/,0$/, '')} ${t('unit.l')}` : t('settings.tank_unset')}
+                     value={
+                        activeVehicle.tankCapacityLiters != null
+                           ? `${formatNumber(activeVehicle.tankCapacityLiters, 1).replace(/,0$/, '')} ${t('unit.l')}`
+                           : t('settings.tank_unset')
+                     }
                      tone={activeVehicle.tankCapacityLiters != null ? 'default' : 'primary'}
-                     onPress={() => navigation.navigate('VehicleForm', { vehicleId: activeVehicle.id, focus: 'tank' })}
+                     onPress={() =>
+                        navigation.navigate('VehicleForm', {
+                           vehicleId: activeVehicle.id,
+                           focus: 'tank',
+                        })
+                     }
                   />
                ) : null}
-               <ListRow label={t('settings.vehicle_add')} icon="plus" onPress={() => navigation.navigate('VehicleForm')} />
+               <ListRow
+                  label={t('settings.vehicle_add')}
+                  icon="plus"
+                  onPress={() => navigation.navigate('VehicleForm')}
+               />
             </RowGroup>
 
             <SectionLabel>{t('settings.preferences')}</SectionLabel>
             <RowGroup>
-               <ListRow label={t('settings.currency')} value={settings.currency} onPress={() => navigation.navigate('SettingEdit', { kind: 'currency' })} />
+               <ListRow
+                  label={t('settings.fuel_price')}
+                  value={
+                     settings.fuelPricePerLiter != null
+                        ? `${formatNumber(settings.fuelPricePerLiter, 2).replace(/,00$/, '')} ${settings.currency}`
+                        : t('settings.tank_unset')
+                  }
+                  tone={settings.fuelPricePerLiter != null ? 'default' : 'primary'}
+                  onPress={() => navigation.navigate('SettingEdit', { kind: 'price' })}
+               />
+               <ListRow
+                  label={t('settings.currency')}
+                  value={settings.currency}
+                  onPress={() => navigation.navigate('SettingEdit', { kind: 'currency' })}
+               />
                <ListRow
                   label={t('settings.alert')}
                   value={`+${formatNumber(settings.alertThresholdPercent, 0)} %`}
@@ -175,9 +228,25 @@ export function SettingsScreen() {
 
             <SectionLabel>{t('settings.data')}</SectionLabel>
             <RowGroup>
-               <ListRow label={t('settings.export')} icon="download" chevron={false} onPress={exportData} />
-               <ListRow label={t('settings.import')} icon="upload" chevron={false} onPress={importBackup} />
-               <ListRow label={t('settings.erase')} icon="trash" tone="danger" chevron={false} onPress={eraseAll} />
+               <ListRow
+                  label={t('settings.export')}
+                  icon="download"
+                  chevron={false}
+                  onPress={exportData}
+               />
+               <ListRow
+                  label={t('settings.import')}
+                  icon="upload"
+                  chevron={false}
+                  onPress={importBackup}
+               />
+               <ListRow
+                  label={t('settings.erase')}
+                  icon="trash"
+                  tone="danger"
+                  chevron={false}
+                  onPress={eraseAll}
+               />
             </RowGroup>
 
             <ThemedView bg="transparent" className="pt-1">

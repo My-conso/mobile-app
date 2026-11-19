@@ -38,6 +38,8 @@ export const vehicleName = (v: Pick<Vehicle, 'brand' | 'model'>): string => `${v
 export interface Settings {
    currency: string;
    alertThresholdPercent: number;
+   /** Usual price per liter: pre-fills new fill-ups (undefined until the user sets it) */
+   fuelPricePerLiter?: number;
 }
 
 /**

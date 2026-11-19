@@ -1,6 +1,6 @@
 const { version } = require("./package.json");
 
-const EAS_PROJECT_ID = "";
+const EAS_PROJECT_ID = "5032ecea-f4e9-4131-b37c-7c7bef0d689c";
 const PROJECT_SLUG = "tomo";
 const OWNER = "diamondrarktvo";
 

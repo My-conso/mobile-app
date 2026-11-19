@@ -1,0 +1,76 @@
+name: Release
+
+# Push a tag like v1.0.1 -> checks, EAS APK build, GitHub Release, then the website's app-info.ts is updated.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+env:
+  WEBSITE_REPO: My-conso/website
+  APP_INFO: website/src/app-info.ts
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+
+      - name: Tag must match package.json version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          [ "v$VERSION" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME != package.json v$VERSION"; exit 1; }
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      # Always update the website's app-info.ts BEFORE the build
+      - name: Checkout website
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.WEBSITE_REPO }}
+          token: ${{ secrets.WEBSITE_PUSH_TOKEN }}
+          path: website
+      - name: Update app-info.ts (version, before build)
+        run: |
+          sed -i -E "s|(version: ')[^']*(')|\1${VERSION}\2|" "$APP_INFO"
+          grep -n "version:" "$APP_INFO"
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build APK
+        run: |
+          eas build --profile production-apk --platform android --non-interactive --wait --json > build.json
+          URL=$(node -p "JSON.parse(require('fs').readFileSync('build.json','utf8'))[0].artifacts.buildUrl")
+          curl -fsSL "$URL" -o "tomo-${VERSION}.apk"
+          echo "SIZE_MB=$(node -p "Math.round(require('fs').statSync('tomo-${VERSION}.apk').size/1048576)")" >> "$GITHUB_ENV"
+          echo "SHA256=$(sha256sum "tomo-${VERSION}.apk" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "tomo-${VERSION}.apk" --title "ToMo ${VERSION}" --generate-notes
+
+      - name: Update app-info.ts (APK link, size, SHA-256) and publish the website
+        run: |
+          APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/tomo-${VERSION}.apk"
+          sed -i -E "s|(apkUrl: ')[^']*(')|\1${APK_URL}\2|; s|(apkSizeMb: ')[^']*(')|\1${SIZE_MB}\2|; s|(apkSha256: ')[^']*(')|\1${SHA256}\2|" "$APP_INFO"
+          cd website
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app-info.ts
+          git commit -m "chore: ToMo ${VERSION} release (app-info)"
+          git push

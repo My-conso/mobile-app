@@ -37,7 +37,7 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs typecheck, lint a
 
 ## Architecture
 
-**ToMo** (fuel-consumption tracker for scooters and motorbikes; formerly "My Conso") is a React Native mobile app built with Expo + TypeScript. Entry point is [index.ts](index.ts) → [App.tsx](App.tsx).
+**ToMo** (fuel-consumption tracker for scooters and motorbikes) is a React Native mobile app built with Expo + TypeScript. Entry point is [index.ts](index.ts) → [App.tsx](App.tsx).
 
 ### Provider Stack (App.tsx)
 

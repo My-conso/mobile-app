@@ -185,7 +185,7 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({
             if (onContactSupport) {
                onContactSupport();
             } else {
-               Linking.openURL(`mailto:${SUPPORTS.mail}`);
+               if (SUPPORTS.mail) Linking.openURL(`mailto:${SUPPORTS.mail}`);
             }
             break;
       }
@@ -210,7 +210,7 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({
             if (onContactSupport) {
                onContactSupport();
             } else {
-               Linking.openURL(`mailto:${SUPPORTS.mail}`);
+               if (SUPPORTS.mail) Linking.openURL(`mailto:${SUPPORTS.mail}`);
             }
             break;
       }

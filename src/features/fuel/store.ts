@@ -117,6 +117,7 @@ export const useFuelStore = create<FuelState>()(
             }),
       }),
       {
+         // Legacy storage key (from the app's former name). Do NOT rename: it would orphan the data already saved on phones.
          name: 'my-conso-fuel',
          version: 4,
          storage: createJSONStorage(() => mmkvStorage),

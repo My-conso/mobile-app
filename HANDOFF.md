@@ -76,7 +76,7 @@ Points de risque (non vérifiés) :
 - Le ton doit rester : tutoiement, phrases courtes, chiffres d'abord.
 
 ### F. Site vitrine (pas commencé)
-- Dossier : `../my-conso-website/` (vide). Dépôt séparé : `https://github.com/My-conso/website.git` (à renommer éventuellement). Faire : `git init -b main`, `git remote add origin …`, premier commit, `git push -u origin main`.
+- Dossier : `../website/` (vide). Dépôt séparé : `https://github.com/My-conso/website.git` (à renommer éventuellement). Faire : `git init -b main`, `git remote add origin …`, premier commit, `git push -u origin main`.
 - Contenu : reproduire l'artboard `Site` de l'artefact : en-tête (liens Fonctions / Installer / Questions, bascule FR | MG, bouton Télécharger), héros avec **maquette de téléphone contenant l'Accueil**, 4 fonctions, 3 gestes, section « Installer sur Android » (3 étapes + avertissement APK), FAQ (accordéon), appel final, pied de page.
 - Technique conseillée : **HTML + CSS + un peu de JS, sans build** (bascule FR / MG, accordéon). Polices Google (Inter, Space Grotesk), mêmes jetons de couleur que l'app, `prefers-reduced-motion`, responsive (téléphone 400 px).
 - Fichiers prêts dans `../tomo-brand/site/` : `favicon-32.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `og-image.png` (balises dans `LISEZMOI.md`). Logos dans `../tomo-brand/logos/`.
@@ -107,10 +107,26 @@ npx expo export --platform android --output-dir /tmp/export   # vérifie que le 
 Fait lors de la reprise :
 - **B (marque)** : icônes et splash du pack `tomo-brand/` copiés dans `assets/images/` (splash réduit pour tenir dans le cercle Android 12+ : rayon 309 px pour 338). `name` = « ToMo », `userInterfaceStyle` = `"dark"`. `slug` (`my-conso`), `package` et `bundleIdentifier` **inchangés**.
 - **D (nettoyage)** : CLAUDE.md et README mis à jour (ToMo, sombre uniquement, fr + mg, onboarding, store v4, nouveaux composants) ; `CACHE_KEYS.THEME` et `useAppSettings` supprimés (inutilisés).
-- **F (site)** : `../my-conso-website/` créé (HTML + CSS + JS sans build, FR / MG, FAQ, maquette de téléphone). Vérifié en rendu bureau et mobile 390 px. Dépôt git local initialisé (branche `main`, 1 commit), **aucun remote ajouté et rien poussé**. Voir son `README.md` pour la liste « à faire avant la mise en ligne ».
+- **F (site)** : `../website/` créé (HTML + CSS + JS sans build, FR / MG, FAQ, maquette de téléphone). Vérifié en rendu bureau et mobile 390 px. Dépôt git local initialisé (branche `main`, 1 commit), **aucun remote ajouté et rien poussé**. Voir son `README.md` pour la liste « à faire avant la mise en ligne ».
 
 Reste à faire (mis à jour) : A (vérifier sur téléphone, **jamais fait**), C (renommages : attend les noms de l'utilisateur), D partiel (restyler `src/components/feedback/*`, `ThemedBottomSheet`, toasts ; décider du sort des champs Station / Note), E (relecture malagasy de l'app **et du site**), F (renseigner `config.js`, domaine de `og:image`, choisir l'hébergement, `git remote add origin https://github.com/My-conso/website.git` puis push), G (build EAS et diffusion de l'APK).
 
 ### Correctif du 12 novembre (après la question « as-tu refait le design ? »)
 - Premier lancement, étape 3 : « Ajouter mon premier plein » crée la moto **puis ouvre directement le formulaire de plein** (comme la maquette). Pour cela `Onboarding` est maintenant un écran de la pile (écrans conditionnels selon `onboardingDone`) et `navigateWhenReady` (testé) navigue dès que `FuelForm` existe. À vérifier sur téléphone : après le formulaire, le retour ramène à l'Accueil.
 - Écarts restants avec la maquette : voir la liste donnée dans la conversation (avatar à l'Accueil, Station / Note retirés, écran d'édition de la devise et du seuil, 10 barres max, sélecteur de date natif sur iPhone).
+
+## 8. Renommage ToMo (2026-11-19)
+
+Fait :
+- Dossiers : `tomo/{mobile-app, website, tomo-brand}` (étaient `my-conso/{my-conso-app, my-conso-website, tomo-brand}`). Remotes inchangés : `My-conso/mobile-app`, `My-conso/website`, `My-conso/tomo-brand`. `node_modules` réinstallé (les scripts contiennent des chemins absolus) et cache Jest vidé.
+- Identifiants : slug Expo `tomo`, **`com.tomo.app`** (Android `package` et iOS `bundleIdentifier`, suffixes `.development` / `.preview` selon l'environnement), `package.json` `name` = `tomo`.
+- Sauvegardes : le marqueur du fichier JSON passe de `my-conso` à `tomo` ; les anciennes sauvegardes restent importables (testé).
+- `src/constants/support.ts` : les adresses inventées par le starter (`support@my-conso.com`, `https://my-conso.com`) sont retirées ; le bouton « Contacter le support » de l'écran d'erreur ne fait rien tant que `SUPPORTS.mail` est vide. **À renseigner avec une vraie adresse.**
+
+**Volontairement NON renommé** (les changer ferait perdre les données déjà saisies sur un téléphone) : la clé de stockage `my-conso-fuel` (`store.ts`) et l'identifiant du cache MMKV `my-conso-cache-storage` (`cache-provider.tsx`). Invisibles pour l'utilisateur.
+
+À faire ensuite :
+- Rouvrir VS Code / Claude Code sur `tomo/mobile-app` (l'ancien chemin n'existe plus).
+- `npx expo prebuild --clean` : le dossier `android/` (ignoré par git) contient encore l'ancien identifiant `com.myconso`. L'app installée avec l'ancien identifiant et la nouvelle (`com.tomo.app…`) sont deux applications distinctes sur le téléphone : désinstaller l'ancienne.
+- Pas encore de projet EAS : `npx eas init` créera le projet avec le slug `tomo` (puis renseigner `EAS_PROJECT_ID` dans `app.config.ts`).
+- Les mentions de `../tomo-brand/` ci-dessus restent valables (même dossier parent).

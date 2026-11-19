@@ -2,8 +2,8 @@
 
 React Native app built with Expo, generated from `@diamondrarktvo/rn-starter`.
 
-- Bundle id / package: `com.myconso`
-- Expo slug: `my-conso`
+- Bundle id / package: `com.tomo.app`
+- Expo slug: `tomo`
 
 ## Getting started
 

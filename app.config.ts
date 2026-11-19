@@ -1,12 +1,12 @@
 const { version } = require("./package.json");
 
 const EAS_PROJECT_ID = "";
-const PROJECT_SLUG = "my-conso";
+const PROJECT_SLUG = "tomo";
 const OWNER = "diamondrarktvo";
 
 const APP_NAME = "ToMo";
-const BUNDLE_IDENTIFIER = "com.myconso";
-const PACKAGE_NAME = "com.myconso";
+const BUNDLE_IDENTIFIER = "com.tomo.app";
+const PACKAGE_NAME = "com.tomo.app";
 const ICON = "./assets/images/icon.png";
 const IMAGES = "./assets/images";
 

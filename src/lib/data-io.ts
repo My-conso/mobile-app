@@ -11,7 +11,8 @@ import { entryCost, sortEntries } from './consumption';
 export const BACKUP_VERSION = 3;
 
 export interface Backup {
-   app: 'my-conso';
+   /** Marker of the file's origin. Backups made by earlier versions say 'my-conso' and are still accepted. */
+   app: 'tomo';
    version: number;
    exportedAt: string;
    settings: Settings;
@@ -26,7 +27,7 @@ export function toBackupJson(
    now: Date = new Date(),
 ): string {
    const backup: Backup = {
-      app: 'my-conso',
+      app: 'tomo',
       version: BACKUP_VERSION,
       exportedAt: now.toISOString(),
       settings: data.settings,

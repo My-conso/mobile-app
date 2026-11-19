@@ -3,6 +3,7 @@ import { createMMKV } from 'react-native-mmkv';
 
 // Initialize separate MMKV instance for cache
 export const cacheStorage = createMMKV({
+   // Legacy MMKV id (from the app's former name). Do NOT rename: it would orphan the data already saved on phones.
    id: 'my-conso-cache-storage',
 });
 

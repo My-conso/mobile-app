@@ -1,14 +1,14 @@
 {
   "expo": {
     "name": "ToMo",
-    "slug": "my-conso",
+    "slug": "tomo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.myconso",
+      "bundleIdentifier": "com.tomo.app",
       "icon": {
         "light": "./assets/images/icon.png",
         "dark": "./assets/images/ios-dark.png",
@@ -23,7 +23,7 @@
         "backgroundColor": "#0F1012"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.myconso",
+      "package": "com.tomo.app",
       "permissions": [
         "android.permission.ACCESS_NETWORK_STATE"
       ],

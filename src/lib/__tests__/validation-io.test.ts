@@ -237,3 +237,12 @@ describe('validateVehicleDraft', () => {
       expect(r.value.tankCapacityLiters).toBeUndefined();
    });
 });
+
+describe('marqueur de sauvegarde', () => {
+   it('exporte avec le marqueur « tomo » et accepte encore « my-conso » (anciennes sauvegardes)', () => {
+      const json = toBackupJson({ entries: [], vehicles: [], activeVehicleId: null, settings: DEFAULT_SETTINGS });
+      expect(JSON.parse(json).app).toBe('tomo');
+      const old = JSON.stringify({ app: 'my-conso', version: 2, entries: [], vehicles: [], settings: {} });
+      expect(parseBackupJson(old).ok).toBe(true);
+   });
+});

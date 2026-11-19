@@ -80,16 +80,15 @@ const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, c
    const role = i?.role;
    const cost = entryCost(entry);
    const liters = formatLiters(entry.liters);
-   const detail =
+   const amount = cost != null ? `${t('history.row_detail', { liters })} · ${formatNumber(cost, 0)} ${currency}` : t('history.row_detail', { liters });
+   const situation =
       role === 'broken'
-         ? t('history.detail_broken', { liters })
+         ? t('history.detail_broken')
          : role === 'partial' && i.segment
-           ? t('history.detail_partial', { liters, date: formatDayMonthName(i.segment.date) })
+           ? t('history.detail_partial', { date: formatDayMonthName(i.segment.date) })
            : role === 'pending'
-             ? t('history.detail_pending', { liters })
-             : cost != null
-               ? `${t('history.row_detail', { liters })} · ${formatNumber(cost, 0)} ${currency}`
-               : t('history.row_detail', { liters });
+             ? t('history.detail_pending')
+             : null;
    const badge = role && role !== 'segment' ? BADGE[role] : undefined;
    const day = String(new Date(entry.date).getDate()).padStart(2, '0');
 
@@ -101,19 +100,24 @@ const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, c
             item.first && 'rounded-t-card',
             item.last && 'rounded-b-card border-b',
          )}>
-         <ThemedView bg="transparent" className="w-11 items-center gap-px">
+         <ThemedView bg="background-secondary" className="border-border-subtle w-14 items-center justify-center rounded-2xl border px-1 py-2">
+            <ThemedText variant="caption" color="secondary" weight="medium" className="text-[10px] leading-4 uppercase">
+               {formatMonthShort(entry.date).replace('.', '')}
+            </ThemedText>
             <ThemedText numeric weight="semibold" className="text-xl leading-6">
                {day}
-            </ThemedText>
-            <ThemedText variant="caption" color="muted" className="text-[11px]">
-               {formatMonthShort(entry.date)}
             </ThemedText>
          </ThemedView>
          <ThemedView bg="transparent" gap="xs" className="min-w-0 flex-1">
             <ThemedText variant="body">{formatKm(entry.odometerKm)} km</ThemedText>
             <ThemedText variant="caption" color="muted" numberOfLines={1}>
-               {detail}
+               {amount}
             </ThemedText>
+            {situation ? (
+               <ThemedText variant="caption" color="secondary" numberOfLines={1}>
+                  {situation}
+               </ThemedText>
+            ) : null}
          </ThemedView>
          {role === 'segment' && i.segment ? (
             <ThemedView bg="transparent" className="items-end gap-0.5">

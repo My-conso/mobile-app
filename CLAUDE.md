@@ -31,6 +31,10 @@ pnpm test -t "name of the test"
 # Native dev builds (the app uses native modules like MMKV/Nitro, so Expo Go won't work)
 pnpm dev-client          # start Metro for a dev client
 pnpm ios / pnpm android  # expo run:* on a physical device
+
+# EAS builds (profiles in eas.json) and skeleton generation
+pnpm build:android:development | build:android:preview | build:android:production | build:ios:preview | build:ios:production
+pnpm bones:generate      # boneyard-js skeleton loaders -> src/bones (generated on demand; src/bones does not exist yet)
 ```
 
 CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs typecheck, lint and test with pnpm 10 / Node 22. Use `pnpm` (lockfile is `pnpm-lock.yaml`).

@@ -8,18 +8,14 @@ import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
 import { ThemedButton } from '@/src/components/ui/themed-button';
 import { ThemedIcon } from '@/src/components/ui/themed-icon';
-import { ThemedPressable } from '@/src/components/ui/themed-pressable';
-import { StatCard } from '@/src/components/ui/themed-stat-card';
 import { AnimatedNumber } from '@/src/components/ui/themed-animated-number';
-import { Odometer } from '@/src/components/ui/themed-odometer';
-import { MiniBars } from '@/src/components/ui/themed-mini-bars';
 import { VehicleAvatar } from '@/src/features/fuel/components/vehicle-avatar';
 import { VehicleSwitcher } from '@/src/features/fuel/components/vehicle-switcher';
 import { useOpenFuelForm } from '@/src/features/fuel/hooks';
 import { useActiveVehicle, useConsumption, useFuelStore } from '@/src/features/fuel/store';
 import { vehicleName } from '@/src/features/fuel/types';
-import { estimatedRangeKm, MIN_SEGMENTS_FOR_ALERT } from '@/src/lib/consumption';
-import { formatDateLong, formatKm, formatKmPerL, formatL100, formatNumber } from '@/src/lib/format';
+import { entryCost, MIN_SEGMENTS_FOR_ALERT } from '@/src/lib/consumption';
+import { formatDateLong, formatKm, formatNumber, monthKey } from '@/src/lib/format';
 import type { RootStackParamList } from '@/src/navigation/types';
 
 /** Below this gap (in %) the last fill-up counts as "same as usual". */
@@ -35,8 +31,9 @@ export function HomeScreen() {
 
    const { summary, lastSegment, segments, sorted } = result;
    const lastEntry = sorted.length ? sorted[sorted.length - 1] : null;
-   const range = estimatedRangeKm(summary.l100, vehicle?.tankCapacityLiters);
    const dash = t('common.dash');
+   const currentMonth = monthKey(new Date().toISOString());
+   const monthSpent = sorted.reduce((sum, e) => (monthKey(e.date) === currentMonth ? sum + (entryCost(e) ?? 0) : sum), 0);
 
    // How the last fill-up compares with the average: amber = a bit more, coral = over the alert threshold
    const delta = lastSegment && summary.l100 ? ((lastSegment.l100 - summary.l100) / summary.l100) * 100 : null;
@@ -50,8 +47,6 @@ export function HomeScreen() {
              ? { tone: 'accent' as const, icon: 'trend-up' as const, text: t('home.trend_up') }
              : { tone: 'primary' as const, icon: 'trend-down' as const, text: t('home.trend_down') };
    const deltaLabel = delta != null ? `${delta > 0 ? '+' : '−'}${formatNumber(Math.abs(delta), 1)} %` : '';
-
-   const lastThree = segments.slice(-3).map(s => s.l100);
 
    return (
       <Screen safeAreaEdges={['top']} withSmallPadding={false} withDismissKeyboardOnOutside={false}>
@@ -69,20 +64,20 @@ export function HomeScreen() {
             <VehicleSwitcher />
 
             {!vehicle ? (
-               <ThemedView variant="card" rounded="card" padding="lg" gap="md">
+               <ThemedView variant="card" border="default" rounded="2xl" padding="lg" gap="md">
                   <ThemedText variant="h3">{t('home.welcome_title')}</ThemedText>
                   <ThemedText color="secondary">{t('home.welcome_text')}</ThemedText>
                   <ThemedButton title={t('home.welcome_cta')} size="lg" fullWidth onPress={() => navigation.navigate('VehicleForm')} />
                </ThemedView>
             ) : sorted.length === 0 ? (
-               <ThemedView variant="card" rounded="card" padding="lg" gap="md">
+               <ThemedView variant="card" border="default" rounded="2xl" padding="lg" gap="md">
                   <ThemedText variant="h3">{t('home.empty_title')}</ThemedText>
                   <ThemedText color="secondary">{t('home.empty_text')}</ThemedText>
                   <ThemedButton title={t('home.empty_cta')} size="lg" fullWidth onPress={() => openFuelForm()} />
                </ThemedView>
             ) : (
                <>
-                  <ThemedView variant="card" rounded="hero" gap="lg" className="p-[22px]">
+                  <ThemedView variant="card" border="default" rounded="2xl" gap="lg" className="p-[22px]">
                      <ThemedText variant="body-small" color="secondary">
                         {t('home.avg_title')}
                      </ThemedText>
@@ -91,20 +86,12 @@ export function HomeScreen() {
                            <Row items="baseline" gap="sm" bg="transparent">
                               <AnimatedNumber value={summary.l100} decimals={2} weight="semibold" color="primary" className="text-6xl leading-none tracking-tighter" />
                               <ThemedText variant="body-large" color="secondary">
-                                 {t('unit.l100')}
+                                 {t('home.avg_unit')}
                               </ThemedText>
                            </Row>
-                           <Row justify="between" items="end" gap="md" bg="transparent">
-                              <ThemedView bg="transparent" gap="xs">
-                                 <ThemedText numeric weight="medium" className="text-xl">
-                                    {formatKmPerL(summary.kmPerL ?? 0)} {t('unit.kml')}
-                                 </ThemedText>
-                                 <ThemedText variant="caption" color="muted">
-                                    {t('home.avg_detail', { count: formatNumber(summary.segmentCount), km: formatKm(summary.totalKm) })}
-                                 </ThemedText>
-                              </ThemedView>
-                              <MiniBars values={lastThree} label={t('home.bars_label', { values: lastThree.map(formatL100).join(', ') })} />
-                           </Row>
+                           {summary.kmPerL != null ? (
+                              <ThemedText variant="body-small">{t('home.avg_per_litre', { km: formatNumber(summary.kmPerL, 0) })}</ThemedText>
+                           ) : null}
                            {trend ? (
                               <Row items="center" gap="sm" bg="transparent" className="border-border border-t pt-3.5">
                                  <ThemedIcon name={trend.icon} size="xs" color={trend.tone === 'danger' ? 'danger' : trend.tone === 'accent' ? 'warning' : 'primary'} strokeWidth={2.4} />
@@ -122,45 +109,50 @@ export function HomeScreen() {
                      )}
                   </ThemedView>
 
-                  <Row gap="md" bg="transparent">
-                     <StatCard
-                        className="flex-1"
-                        label={t('home.cost_per_100')}
-                        value={summary.costPer100Km != null ? formatNumber(summary.costPer100Km, 0) : dash}
-                        unit={summary.costPer100Km != null ? settings.currency : undefined}
-                     />
-                     <StatCard className="flex-1" label={t('home.km_tracked')} value={formatKm(summary.totalKm)} unit={t('unit.km')} />
-                  </Row>
-                  <Row gap="md" bg="transparent">
-                     <StatCard className="flex-1" label={t('home.total_spent')} value={formatNumber(result.totalSpent, 0)} unit={settings.currency} />
-                     {range != null ? (
-                        <StatCard className="flex-1" label={t('home.range')} value={formatKm(range)} unit={t('unit.km')} />
-                     ) : (
-                        <ThemedPressable
-                           onPress={() => navigation.navigate('VehicleForm', { vehicleId: vehicle.id, focus: 'tank' })}
-                           className="border-border flex-1 gap-2.5 rounded-[18px] border border-dashed p-4">
-                           <ThemedText variant="caption" color="secondary">
-                              {t('home.range')}
-                           </ThemedText>
-                           <ThemedText variant="body-small" weight="medium" color="primary">
-                              {t('home.range_missing')}
-                           </ThemedText>
-                        </ThemedPressable>
-                     )}
-                  </Row>
+                  <ThemedView variant="card" border="default" rounded="2xl" gap="md" className="p-5">
+                     <ThemedText variant="body-small" color="secondary">
+                        {t('home.cost_title')}
+                     </ThemedText>
+                     <Row items="baseline" gap="sm" bg="transparent">
+                        <ThemedText numeric weight="semibold" variant="h2">
+                           {summary.costPer100Km != null ? `${formatNumber(summary.costPer100Km, 0)} ${settings.currency}` : dash}
+                        </ThemedText>
+                        <ThemedText variant="caption" color="secondary">
+                           {t('home.cost_unit')}
+                        </ThemedText>
+                     </Row>
+                     {monthSpent > 0 ? (
+                        <ThemedText variant="caption" color="secondary">
+                           {t('home.month_spent', { amount: `${formatNumber(monthSpent, 0)} ${settings.currency}` })}
+                        </ThemedText>
+                     ) : null}
+                  </ThemedView>
 
                   {lastEntry ? (
-                     <ThemedView variant="card" rounded="card" gap="md" className="p-[18px]">
-                        <Row justify="between" items="center" bg="transparent">
+                     <ThemedView variant="card" border="default" rounded="2xl" className="px-5 py-1.5">
+                        <ThemedText variant="body-small" color="secondary" className="pt-3 pb-1.5">
+                           {t('home.last_entry')}
+                        </ThemedText>
+                        <Row justify="between" items="center" bg="transparent" className="min-h-10">
                            <ThemedText variant="body-small" color="secondary">
-                              {t('home.last_entry')}
+                              {t('home.last_date')}
                            </ThemedText>
                            <ThemedText variant="body-small">{formatDateLong(lastEntry.date)}</ThemedText>
                         </Row>
-                        <Row justify="between" items="center" bg="transparent">
-                           <Odometer km={lastEntry.odometerKm} />
+                        <Row justify="between" items="center" bg="transparent" className="border-border min-h-10 border-t">
                            <ThemedText variant="body-small" color="secondary">
-                              {t('home.last_entry_detail', { liters: formatNumber(lastEntry.liters, 1) })}
+                              {t('home.last_liters')}
+                           </ThemedText>
+                           <ThemedText variant="body-small" numeric weight="medium">
+                              {t('home.liters_value', { liters: formatNumber(lastEntry.liters, 1) })}
+                           </ThemedText>
+                        </Row>
+                        <Row justify="between" items="center" bg="transparent" className="border-border min-h-10 border-t">
+                           <ThemedText variant="body-small" color="secondary">
+                              {t('home.last_odometer')}
+                           </ThemedText>
+                           <ThemedText variant="body-small" numeric weight="medium">
+                              {formatKm(lastEntry.odometerKm)} {t('unit.km')}
                            </ThemedText>
                         </Row>
                      </ThemedView>

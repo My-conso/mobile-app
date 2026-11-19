@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Alert } from 'react-native';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, type ScrollView, type TextInput } from 'react-native';
+import { useRoute, type RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { Screen } from '@/src/components/layout/screen';
@@ -22,6 +21,7 @@ import { deleteVehiclePhoto, saveVehiclePhoto } from '@/src/lib/vehicle-photo';
 import { showToast } from '@/src/providers/toast-provider';
 import { showError } from '@/src/providers/error-provider';
 import type { RootStackParamList } from '@/src/navigation/types';
+import { useGoBack } from '@/src/navigation/use-go-back';
 
 const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
    mediaTypes: ['images'],
@@ -32,7 +32,6 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
 
 export function VehicleFormScreen() {
    const { t } = useTranslation('fuel');
-   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
    const route = useRoute<RouteProp<RootStackParamList, 'VehicleForm'>>();
    const vehicleId = route.params?.vehicleId;
 
@@ -50,16 +49,38 @@ export function VehicleFormScreen() {
       model: existing?.model ?? '',
       year: existing?.year ? String(existing.year) : '',
       cc: existing?.displacementCc ? String(existing.displacementCc) : '',
-      tank: existing?.tankCapacityLiters != null ? formatNumber(existing.tankCapacityLiters, 2).replace(/,?0+$/, '') : '',
+      tank:
+         existing?.tankCapacityLiters != null
+            ? formatNumber(existing.tankCapacityLiters, 2).replace(/,?0+$/, '')
+            : '',
    });
    // The photo is only written to permanent storage on Save, so cancelling leaves no orphan file.
    const [photoUri, setPhotoUri] = useState<string | undefined>(existing?.photoUri);
    const [submitted, setSubmitted] = useState(false);
 
-   const goBack = () => {
-      if (navigation.canGoBack()) navigation.goBack();
-      else navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
-   };
+   const goBack = useGoBack();
+
+   // Opened from "tell me the tank size": scroll down to the tank field, highlight it, then focus it
+   const focusTank = route.params?.focus === 'tank';
+   const scrollRef = useRef<ScrollView | null>(null);
+   const tankRef = useRef<TextInput>(null);
+   const [tankY, setTankY] = useState<number | null>(null);
+   const [highlightTank, setHighlightTank] = useState(false);
+   const focusDone = useRef(false);
+   useEffect(() => {
+      if (!focusTank || tankY == null || focusDone.current) return;
+      focusDone.current = true;
+      // Wait for the modal's opening transition so the scroll is visible
+      const scrollTimer = setTimeout(() => {
+         scrollRef.current?.scrollTo({ y: Math.max(0, tankY - 140), animated: true });
+         setHighlightTank(true);
+      }, 450);
+      const focusTimer = setTimeout(() => tankRef.current?.focus(), 1000);
+      return () => {
+         clearTimeout(scrollTimer);
+         clearTimeout(focusTimer);
+      };
+   }, [focusTank, tankY]);
 
    const result = validateVehicleDraft(draft);
 
@@ -89,7 +110,8 @@ export function VehicleFormScreen() {
       try {
          // Copy only when the photo changed (a new pick lives in the picker's cache)
          const changed = photoUri !== existing?.photoUri;
-         const finalPhoto = changed && photoUri ? saveVehiclePhoto(photoUri, existing?.id ?? 'new') : photoUri;
+         const finalPhoto =
+            changed && photoUri ? saveVehiclePhoto(photoUri, existing?.id ?? 'new') : photoUri;
          if (changed) deleteVehiclePhoto(existing?.photoUri);
 
          const value = { ...result.value, photoUri: finalPhoto };
@@ -105,27 +127,41 @@ export function VehicleFormScreen() {
    const onDelete = () => {
       if (!vehicleId || !existing) return;
       const count = entries.filter(e => e.vehicleId === vehicleId).length;
-      Alert.alert(t('vehicle_form.delete_title', { name: vehicleName(existing) }), t('vehicle_form.delete_text', { count }), [
-         { text: t('common.cancel'), style: 'cancel' },
-         {
-            text: t('common.delete'),
-            style: 'destructive',
-            onPress: () => {
-               deleteVehicle(vehicleId);
-               showToast('success', t('vehicle_form.deleted'));
-               goBack();
+      Alert.alert(
+         t('vehicle_form.delete_title', { name: vehicleName(existing) }),
+         t('vehicle_form.delete_text', { count }),
+         [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+               text: t('common.delete'),
+               style: 'destructive',
+               onPress: () => {
+                  deleteVehicle(vehicleId);
+                  showToast('success', t('vehicle_form.deleted'));
+                  goBack();
+               },
             },
-         },
-      ]);
+         ]
+      );
    };
 
    return (
       <Screen withKeyboardAvoiding withSmallPadding={false}>
-         <ScreenHeader title={isEdit ? t('vehicle_form.title_edit') : t('vehicle_form.title_new')} onBack={goBack} backLabel={t('common.back')} />
+         <ScreenHeader
+            title={isEdit ? t('vehicle_form.title_edit') : t('vehicle_form.title_new')}
+            onBack={goBack}
+            backLabel={t('common.back')}
+         />
 
-         <ScrollContainer contentContainerClassName="gap-6 px-5 pt-4 pb-6" keyboardShouldPersistTaps="handled">
+         <ScrollContainer
+            scrollRef={scrollRef}
+            contentContainerClassName="gap-6 px-5 pt-4 pb-6"
+            keyboardShouldPersistTaps="handled">
             <ThemedView gap="md" bg="transparent" className="items-center">
-               <VehicleAvatar vehicle={{ brand: draft.brand || '?', model: draft.model, photoUri }} size="xl" />
+               <VehicleAvatar
+                  vehicle={{ brand: draft.brand || '?', model: draft.model, photoUri }}
+                  size="xl"
+               />
                <ThemedText variant="caption" color="secondary" align="center">
                   {t('vehicle_form.photo_help')}
                </ThemedText>
@@ -146,7 +182,9 @@ export function VehicleFormScreen() {
                   />
                </Row>
                {photoUri ? (
-                  <ThemedPressable onPress={() => setPhotoUri(undefined)} className="min-h-11 flex-row items-center gap-2 px-3">
+                  <ThemedPressable
+                     onPress={() => setPhotoUri(undefined)}
+                     className="min-h-11 flex-row items-center gap-2 px-3">
                      <ThemedIcon name="trash" color="danger" size="sm" />
                      <ThemedText variant="body-small" weight="medium" color="danger">
                         {t('vehicle_form.photo_remove')}
@@ -155,13 +193,27 @@ export function VehicleFormScreen() {
                ) : null}
             </ThemedView>
 
-            <VehicleFields draft={draft} onChange={patch => setDraft(d => ({ ...d, ...patch }))} errors={submitted ? result.errors : undefined} />
+            <VehicleFields
+               draft={draft}
+               onChange={patch => setDraft(d => ({ ...d, ...patch }))}
+               errors={submitted ? result.errors : undefined}
+               tankRef={tankRef}
+               onTankLayout={setTankY}
+               highlightTank={highlightTank}
+            />
          </ScrollContainer>
 
          <ThemedView bg="transparent" gap="sm" className="px-5 pt-2 pb-7">
             <ThemedButton title={t('vehicle_form.save')} size="lg" fullWidth onPress={onSave} />
             {isEdit ? (
-               <ThemedButton title={t('vehicle_form.delete')} variant="outline" size="md" fullWidth textClassName="text-danger" onPress={onDelete} />
+               <ThemedButton
+                  title={t('vehicle_form.delete')}
+                  variant="outline"
+                  size="md"
+                  fullWidth
+                  textClassName="text-danger"
+                  onPress={onDelete}
+               />
             ) : null}
          </ThemedView>
       </Screen>

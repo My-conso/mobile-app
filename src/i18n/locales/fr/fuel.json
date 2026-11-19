@@ -91,7 +91,6 @@
       "save": "Enregistrer le plein",
       "saved_title": "C'est noté !",
       "saved_body": "{{l100}} L/100 km sur ces {{km}} km.\nTa moyenne passe à {{avg}}.",
-      "saved_plain": "Plein enregistré.",
       "back_home": "Retour à l'accueil",
       "delete_title": "Supprimer ce plein ?",
       "delete_text": "Cette action est définitive.",

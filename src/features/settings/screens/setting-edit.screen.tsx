@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRoute, type RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/layout/screen';
 import { ScreenHeader } from '@/src/components/layout/screen-header';
@@ -11,11 +10,11 @@ import { useFuelStore } from '@/src/features/fuel/store';
 import { DEFAULT_SETTINGS } from '@/src/features/fuel/types';
 import { formatNumber, parseDecimal } from '@/src/lib/format';
 import type { RootStackParamList } from '@/src/navigation/types';
+import { useGoBack } from '@/src/navigation/use-go-back';
 
 /** Edits one app-wide preference (currency symbol or alert threshold) on its own small screen. */
 export function SettingEditScreen() {
    const { t } = useTranslation('fuel');
-   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
    const { kind } = useRoute<RouteProp<RootStackParamList, 'SettingEdit'>>().params;
    const settings = useFuelStore(s => s.settings);
    const updateSettings = useFuelStore(s => s.updateSettings);
@@ -24,7 +23,7 @@ export function SettingEditScreen() {
    const [value, setValue] = useState(isCurrency ? settings.currency : formatNumber(settings.alertThresholdPercent, 0));
    const [submitted, setSubmitted] = useState(false);
 
-   const goBack = () => (navigation.canGoBack() ? navigation.goBack() : navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] }));
+   const goBack = useGoBack();
 
    const parsed = parseDecimal(value);
    const invalid = isCurrency ? value.trim() === '' : parsed == null || parsed <= 0;

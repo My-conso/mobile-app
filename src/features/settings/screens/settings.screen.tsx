@@ -157,7 +157,7 @@ export function SettingsScreen() {
                      label={t('settings.tank')}
                      value={activeVehicle.tankCapacityLiters != null ? `${formatNumber(activeVehicle.tankCapacityLiters, 1).replace(/,0$/, '')} ${t('unit.l')}` : t('settings.tank_unset')}
                      tone={activeVehicle.tankCapacityLiters != null ? 'default' : 'primary'}
-                     onPress={() => navigation.navigate('VehicleForm', { vehicleId: activeVehicle.id })}
+                     onPress={() => navigation.navigate('VehicleForm', { vehicleId: activeVehicle.id, focus: 'tank' })}
                   />
                ) : null}
                <ListRow label={t('settings.vehicle_add')} icon="plus" onPress={() => navigation.navigate('VehicleForm')} />

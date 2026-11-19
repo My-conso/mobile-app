@@ -21,6 +21,8 @@ interface ScrollContainerProps extends ScrollViewProps {
    showsHorizontalScrollIndicator?: boolean;
    className?: string;
    contentContainerClassName?: string;
+   /** Lets the parent scroll programmatically (scrollTo) */
+   scrollRef?: React.MutableRefObject<ScrollView | null>;
 }
 
 /**
@@ -48,6 +50,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
    className = '',
    contentContainerClassName = '',
    onScroll,
+   scrollRef,
    ...props
 }) => {
    const [refreshing, setRefreshing] = useState(false);
@@ -92,7 +95,10 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
    return (
       <ThemedView className="flex-1">
          <ScrollView
-            ref={scrollViewRef}
+            ref={node => {
+               scrollViewRef.current = node;
+               if (scrollRef) scrollRef.current = node;
+            }}
             className={cn('flex-1', className)}
             contentContainerClassName={cn('grow', contentContainerClassName)}
             showsVerticalScrollIndicator={showsVerticalScrollIndicator}

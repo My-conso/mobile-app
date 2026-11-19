@@ -120,7 +120,7 @@ const sizeStyles = {
       label: 'text-xs',
       iconSize: 16,
       gap: 'gap-1.5',
-      helperSize: 'xs',
+      helperSize: 'caption' as const,
       rounded: 'rounded-lg',
    },
    md: {
@@ -129,7 +129,7 @@ const sizeStyles = {
       label: 'text-sm',
       iconSize: 18,
       gap: 'gap-2',
-      helperSize: 'sm',
+      helperSize: 'body-small' as const,
       rounded: 'rounded-xl',
    },
    lg: {
@@ -138,7 +138,7 @@ const sizeStyles = {
       label: 'text-base',
       iconSize: 20,
       gap: 'gap-2.5',
-      helperSize: 'base',
+      helperSize: 'body' as const,
       rounded: 'rounded-xl',
    },
 };
@@ -498,7 +498,7 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
                            />
                         )}
                         <ThemedText
-                           variant={sizeStyle.helperSize as any}
+                           variant={sizeStyle.helperSize}
                            color={helperColor}
                            className={cn('flex-1', helperClassName)}>
                            {helperMessage}

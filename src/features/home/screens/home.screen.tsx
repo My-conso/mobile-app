@@ -137,7 +137,7 @@ export function HomeScreen() {
                         <StatCard className="flex-1" label={t('home.range')} value={formatKm(range)} unit={t('unit.km')} />
                      ) : (
                         <ThemedPressable
-                           onPress={() => navigation.navigate('VehicleForm', { vehicleId: vehicle.id })}
+                           onPress={() => navigation.navigate('VehicleForm', { vehicleId: vehicle.id, focus: 'tank' })}
                            className="border-border flex-1 gap-2.5 rounded-[18px] border border-dashed p-4">
                            <ThemedText variant="caption" color="secondary">
                               {t('home.range')}

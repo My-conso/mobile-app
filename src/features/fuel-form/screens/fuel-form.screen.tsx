@@ -24,6 +24,7 @@ import { previewEntry, sortEntries } from '@/src/lib/consumption';
 import { formatKm, formatL100, formatNumber, parseDecimal } from '@/src/lib/format';
 import { round2, validateDraft, type FormDraft } from '@/src/lib/validation';
 import type { RootStackParamList } from '@/src/navigation/types';
+import { useGoBack } from '@/src/navigation/use-go-back';
 
 type PriceMode = 'per_liter' | 'total';
 
@@ -51,7 +52,6 @@ export function FuelFormScreen() {
 
 function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
    const { t } = useTranslation('fuel');
-   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
    const route = useRoute<RouteProp<RootStackParamList, 'FuelForm'>>();
    const entryId = route.params?.entryId;
 
@@ -62,11 +62,8 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
    const updateEntry = useFuelStore(s => s.updateEntry);
    const deleteEntry = useFuelStore(s => s.deleteEntry);
 
-   // Always return to the screen the user came from (Home or History); fall back to Home if the form was opened first.
-   const goBack = () => {
-      if (navigation.canGoBack()) navigation.goBack();
-      else navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
-   };
+   // Always return to the screen the user came from (Home or History)
+   const goBack = useGoBack();
 
    const existing = useMemo(() => allEntries.find(e => e.id === entryId), [allEntries, entryId]);
    // Editing keeps the entry's own vehicle; a new fill-up goes to the active vehicle
@@ -354,7 +351,7 @@ function SavedConfirmation({ entryId, onDone }: { entryId: string; onDone: () =>
    const body =
       segment && average != null && result.info[entryId]?.role === 'segment'
          ? t('form.saved_body', { l100: formatL100(segment.l100), km: formatKm(segment.distanceKm), avg: formatL100(average) })
-         : t('form.saved_plain');
+         : null;
 
    return (
       <Screen withSmallPadding={false}>
@@ -366,11 +363,13 @@ function SavedConfirmation({ entryId, onDone }: { entryId: string; onDone: () =>
             </Animated.View>
             <ThemedView bg="transparent" gap="sm" className="items-center">
                <ThemedText variant="h2">{t('form.saved_title')}</ThemedText>
-               <ThemedText color="secondary" align="center" className="leading-6">
-                  {body}
-               </ThemedText>
+               {body ? (
+                  <ThemedText color="secondary" align="center" className="leading-6">
+                     {body}
+                  </ThemedText>
+               ) : null}
             </ThemedView>
-            <ThemedButton title={t('form.back_home')} variant="outline" size="md" onPress={onDone} />
+            <ThemedButton title={t('form.back_home')} variant="outline" size="md" className="self-center" onPress={onDone} />
          </Animated.View>
       </Screen>
    );

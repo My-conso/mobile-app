@@ -87,10 +87,11 @@ export function formatMonthYear(iso: string): string {
    return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-/** "mars" short label for charts */
+const MONTHS_SHORT = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+/** "Nov": short month label, no dot (history rows, charts) */
 export function formatMonthShort(iso: string): string {
-   const d = new Date(iso);
-   return MONTHS[d.getMonth()].slice(0, 4) + (MONTHS[d.getMonth()].length > 4 ? '.' : '');
+   return MONTHS_SHORT[new Date(iso).getMonth()];
 }
 
 /** "01/03" for chart axes */

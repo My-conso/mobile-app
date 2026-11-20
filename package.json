@@ -1,6 +1,6 @@
 {
    "name": "tomo",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "main": "index.ts",
    "scripts": {
       "bones:generate": "npx boneyard-js build --native --out ./src/bones",

@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
+import Animated, {
+   Easing,
+   FadeIn,
+   FadeInLeft,
+   ReduceMotion,
+   useAnimatedStyle,
+   useSharedValue,
+   withTiming,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import i18next from 'i18next';
 import { Screen } from '@/src/components/layout/screen';
@@ -17,9 +25,52 @@ import { validateVehicleDraft, type VehicleDraftInput } from '@/src/lib/validati
 import type { LanguageCodeSupportedT } from '@/src/i18n/types';
 import { navigateWhenReady } from '@/src/navigation/navigation-ref';
 import { cn } from '@/src/utils/tailwind';
+import { Cascade } from '@/src/components/ui/themed-cascade';
+import { useShake } from '@/src/hooks/use-shake';
+import { haptic } from '@/src/lib/haptics';
 import { ScooterIllustration } from '../components/scooter-illustration';
 
 type Step = 1 | 2 | 3;
+
+/** A new step slides in 28 px from the right while fading in (340 ms). */
+const stepIn = FadeIn.duration(340)
+   .easing(Easing.out(Easing.cubic))
+   .withInitialValues({ opacity: 0, transform: [{ translateX: 28 }] })
+   .reduceMotion(ReduceMotion.System);
+
+/** Language choice card: the selected one grows slightly (1.025) with a soft ring. */
+function LanguageCard({
+   active,
+   children,
+   onPress,
+}: {
+   active: boolean;
+   children: React.ReactNode;
+   onPress: () => void;
+}) {
+   const scale = useSharedValue(1);
+   React.useEffect(() => {
+      scale.value = withTiming(active ? 1.025 : 1, {
+         duration: 160,
+         reduceMotion: ReduceMotion.System,
+      });
+   }, [active, scale]);
+   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+   return (
+      <Animated.View style={style}>
+         <ThemedPressable
+            accessibilityRole="radio"
+            accessibilityState={{ checked: active }}
+            onPress={onPress}
+            className={cn(
+               'min-h-18 flex-row items-center gap-3.5 rounded-card border-[1.5px] px-[18px]',
+               active ? 'bg-primary-soft border-primary' : 'bg-card border-border'
+            )}>
+            {children}
+         </ThemedPressable>
+      </Animated.View>
+   );
+}
 
 const LANGUAGES: { code: LanguageCodeSupportedT; badge: string; name: string }[] = [
    { code: 'fr', badge: 'FR', name: 'Français' },
@@ -45,21 +96,27 @@ export function OnboardingScreen() {
    const bikeName = vehicleName(result.value) || (lang === 'mg' ? 'moto' : 'moto');
 
    const pickLanguage = (code: LanguageCodeSupportedT) => {
+      if (code !== lang) haptic.selection();
       setLang(code);
       setLangError(false);
       i18next.changeLanguage(code); // also persisted by the language detector
    };
 
+   const langShake = useShake();
+   const formShake = useShake();
+
    const next = () => {
       if (step === 1) {
          if (!lang) {
             setLangError(true);
+            langShake.shake();
             return;
          }
          setStep(2);
       } else if (step === 2) {
          if (result.hasErrors) {
             setShowErrors(true);
+            formShake.shake();
             return;
          }
          setStep(3);
@@ -97,14 +154,19 @@ export function OnboardingScreen() {
                   </ThemedText>
                   <Row gap="xs" bg="transparent">
                      <ThemedView className="bg-primary h-1 w-[18px] rounded-sm" />
-                     <ThemedView className={cn('h-1 w-[18px] rounded-sm', step >= 2 ? 'bg-primary' : 'bg-border')} />
+                     <ThemedView
+                        className={cn(
+                           'h-1 w-[18px] rounded-sm',
+                           step >= 2 ? 'bg-primary' : 'bg-border'
+                        )}
+                     />
                   </Row>
                </Row>
             ) : null}
          </Row>
 
          {step === 1 ? (
-            <Animated.View entering={FadeInDown.duration(260).reduceMotion(ReduceMotion.System)} className="flex-1 gap-7 px-6 pt-10">
+            <Animated.View entering={stepIn} className="flex-1 gap-7 px-6 pt-10">
                <ThemedView bg="transparent" gap="sm">
                   {/* Both languages on purpose: the user hasn't chosen one yet */}
                   <ThemedText variant="h1" className="leading-9">
@@ -114,34 +176,45 @@ export function OnboardingScreen() {
                      Safidio ny fiteninao
                   </ThemedText>
                </ThemedView>
-               <ThemedView bg="transparent" gap="md" accessibilityRole="radiogroup">
+               <Animated.View
+                  style={langShake.style}
+                  className="gap-3"
+                  accessibilityRole="radiogroup">
                   {LANGUAGES.map(l => {
                      const active = lang === l.code;
                      return (
-                        <ThemedPressable
+                        <LanguageCard
                            key={l.code}
-                           accessibilityRole="radio"
-                           accessibilityState={{ checked: active }}
-                           onPress={() => pickLanguage(l.code)}
-                           className={cn(
-                              'min-h-18 flex-row items-center gap-3.5 rounded-card border-[1.5px] px-[18px]',
-                              active ? 'bg-primary-soft border-primary' : 'bg-card border-border',
-                           )}>
+                           active={active}
+                           onPress={() => pickLanguage(l.code)}>
                            <ThemedView className="bg-background-secondary size-10 items-center justify-center rounded-md">
-                              <ThemedText numeric weight="semibold" variant="body-small" color="secondary">
+                              <ThemedText
+                                 numeric
+                                 weight="semibold"
+                                 variant="body-small"
+                                 color="secondary">
                                  {l.badge}
                               </ThemedText>
                            </ThemedView>
                            <ThemedText variant="body-large" weight="medium" className="flex-1">
                               {l.name}
                            </ThemedText>
-                           <ThemedView className={cn('size-6 items-center justify-center rounded-full border-2', active ? 'border-primary' : 'border-foreground-faint')}>
-                              <ThemedView className={cn('size-3 rounded-full', active ? 'bg-primary' : 'bg-transparent')} />
+                           <ThemedView
+                              className={cn(
+                                 'size-6 items-center justify-center rounded-full border-2',
+                                 active ? 'border-primary' : 'border-foreground-faint'
+                              )}>
+                              <ThemedView
+                                 className={cn(
+                                    'size-3 rounded-full',
+                                    active ? 'bg-primary' : 'bg-transparent'
+                                 )}
+                              />
                            </ThemedView>
-                        </ThemedPressable>
+                        </LanguageCard>
                      );
                   })}
-               </ThemedView>
+               </Animated.View>
                {langError ? (
                   <ThemedText variant="caption" color="danger">
                      Choisis une langue · Misafidiana fiteny
@@ -151,8 +224,11 @@ export function OnboardingScreen() {
          ) : null}
 
          {step === 2 ? (
-            <Animated.View entering={FadeInDown.duration(260).reduceMotion(ReduceMotion.System)} className="flex-1">
-               <ScrollContainer keyboardAware contentContainerClassName="gap-5 px-6 pt-7 pb-4" keyboardShouldPersistTaps="handled">
+            <Animated.View entering={stepIn} className="flex-1">
+               <ScrollContainer
+                  keyboardAware
+                  contentContainerClassName="gap-5 px-6 pt-7 pb-4"
+                  keyboardShouldPersistTaps="handled">
                   <ThemedView bg="transparent" gap="sm">
                      <ThemedText variant="h1" className="text-[28px]">
                         {t('onboarding.bike_title')}
@@ -161,30 +237,59 @@ export function OnboardingScreen() {
                         {t('onboarding.bike_sub')}
                      </ThemedText>
                   </ThemedView>
-                  <VehicleFields draft={draft} onChange={patch => setDraft(d => ({ ...d, ...patch }))} errors={showErrors ? result.errors : undefined} />
+                  <Animated.View style={formShake.style}>
+                     <VehicleFields
+                        draft={draft}
+                        onChange={patch => setDraft(d => ({ ...d, ...patch }))}
+                        errors={showErrors ? result.errors : undefined}
+                     />
+                  </Animated.View>
                </ScrollContainer>
             </Animated.View>
          ) : null}
 
          {step === 3 ? (
-            <Animated.View entering={FadeInDown.duration(260).reduceMotion(ReduceMotion.System)} className="flex-1 justify-center gap-7 px-6">
-               <ScooterIllustration label={t('onboarding.scooter_alt')} />
+            <Animated.View entering={stepIn} className="flex-1 justify-center gap-7 px-6">
+               <Animated.View
+                  entering={FadeInLeft.delay(120)
+                     .duration(800)
+                     .easing(Easing.out(Easing.cubic))
+                     .withInitialValues({ opacity: 0, transform: [{ translateX: -90 }] })
+                     .reduceMotion(ReduceMotion.System)}>
+                  <ScooterIllustration label={t('onboarding.scooter_alt')} />
+               </Animated.View>
                <ThemedView bg="transparent" gap="md">
-                  <ThemedText variant="h1" className="text-[28px] leading-8">
-                     {t('onboarding.done_title', { name: bikeName })}
-                  </ThemedText>
-                  <ThemedText variant="body" color="secondary" className="leading-6">
-                     {t('onboarding.done_body')}
-                  </ThemedText>
+                  <Cascade delay={700}>
+                     <ThemedText variant="h1" className="text-[32px] leading-[38px]">
+                        {t('onboarding.done_title', { name: bikeName })}
+                     </ThemedText>
+                  </Cascade>
+                  <Cascade delay={820}>
+                     <ThemedText variant="body" color="secondary" className="leading-6">
+                        {t('onboarding.done_body')}
+                     </ThemedText>
+                  </Cascade>
                </ThemedView>
             </Animated.View>
          ) : null}
 
          <FormFooter className="px-6 pt-4 pb-9">
             {step === 3 ? (
-               <ThemedButton title={t('onboarding.done_cta')} size="lg" fullWidth onPress={finish} />
+               <ThemedButton
+                  title={t('onboarding.done_cta')}
+                  size="lg"
+                  fullWidth
+                  onPress={finish}
+               />
             ) : (
-               <ThemedButton title={step === 2 ? t('onboarding.finish') : lang === 'mg' ? 'Tohizo' : 'Continuer'} size="lg" fullWidth onPress={next} />
+               <ThemedButton
+                  title={
+                     step === 2 ? t('onboarding.finish') : lang === 'mg' ? 'Tohizo' : 'Continuer'
+                  }
+                  size="lg"
+                  fullWidth
+                  onPress={next}
+               />
             )}
          </FormFooter>
       </Screen>

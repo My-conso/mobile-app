@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
+import Animated, {
+   Easing,
+   ReduceMotion,
+   useAnimatedStyle,
+   useSharedValue,
+   withDelay,
+   withSequence,
+   withTiming,
+} from 'react-native-reanimated';
 import { Row, ThemedView } from '../ui/themed-view';
-import { ThemedText } from '../ui/themed-text';
 import { ThemedIcon, type IconName } from '../ui/themed-icon';
 import { ThemedPressable } from '../ui/themed-pressable';
-import { cn } from '@/src/utils/tailwind';
+import { haptic } from '@/src/lib/haptics';
 
 export interface TabBarItem {
    /** Route name of the tab */
@@ -24,12 +31,41 @@ interface TabBarProps extends BottomTabBarProps {
    action: { label: string; onPress: () => void };
 }
 
+/** Icon of a tab: pops (0.7 → 1.22 → 1, 420 ms) each time the tab becomes the active one. Transform only. */
+function TabIcon({ icon, active }: { icon: IconName; active: boolean }) {
+   const scale = useSharedValue(1);
+   useEffect(() => {
+      if (!active) return;
+      scale.value = 0.7;
+      scale.value = withDelay(
+         120,
+         withSequence(
+            withTiming(1.22, {
+               duration: 230,
+               easing: Easing.out(Easing.cubic),
+               reduceMotion: ReduceMotion.System,
+            }),
+            withTiming(1, { duration: 190, reduceMotion: ReduceMotion.System })
+         )
+      );
+   }, [active, scale]);
+   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+   return (
+      <Animated.View style={style}>
+         <ThemedIcon name={icon} customSize={22} color={active ? 'primary' : 'muted'} />
+      </Animated.View>
+   );
+}
+
 /**
- * Floating navigation: [tab] [tab] (+) [tab] [tab]. The centre button is an action, not a tab.
+ * Floating pill navigation: [tab] [tab] (+) [tab] [tab], icons only. The centre button is an action, not a tab:
+ * it turns a quarter turn when pressed.
  */
 export function TabBar({ state, navigation, left, right, action }: TabBarProps) {
    const insets = useSafeAreaInsets();
    const activeRoute = state.routes[state.index]?.name;
+   const turn = useSharedValue(0);
+   const turnStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value}deg` }] }));
 
    const renderTab = (item: TabBarItem) => {
       const active = activeRoute === item.route;
@@ -38,31 +74,44 @@ export function TabBar({ state, navigation, left, right, action }: TabBarProps) 
             key={item.route}
             accessibilityLabel={item.label}
             accessibilityState={{ selected: active }}
+            pressScale={0.9}
             onPress={() => {
                if (!active) navigation.navigate(item.route);
             }}
-            className="h-13 min-w-0 flex-1 items-center justify-center gap-[3px]">
-            <ThemedIcon name={item.icon} customSize={22} color={active ? 'primary' : 'muted'} />
-            <ThemedText variant="caption" className="text-[11px]" color={active ? 'primary' : 'muted'} numberOfLines={1}>
-               {item.label}
-            </ThemedText>
+            className="size-13 items-center justify-center">
+            <TabIcon icon={item.icon} active={active} />
          </ThemedPressable>
       );
    };
 
    return (
       // bottom margin follows the phone's gesture bar (dynamic inset)
-      <ThemedView bg="transparent" className="px-5 pt-3" style={{ paddingBottom: Math.max(insets.bottom, 16) + 10 }}>
-         <Row items="center" bg="card" className={cn('border-border h-17 rounded-[26px] border px-1.5')}>
+      <ThemedView
+         bg="transparent"
+         className="px-5 pt-3"
+         style={{ paddingBottom: Math.max(insets.bottom, 16) + 10 }}>
+         <Row items="center" justify="between" bg="card" className="h-16 rounded-full px-2">
             {left.map(renderTab)}
             <ThemedPressable
                accessibilityLabel={action.label}
+               pressScale={0.9}
                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  haptic.light();
+                  turn.value = withTiming(90, {
+                     duration: 300,
+                     easing: Easing.out(Easing.back(1.6)),
+                     reduceMotion: ReduceMotion.System,
+                  });
+                  // Back to the start once the form has opened over the tabs
+                  setTimeout(() => {
+                     turn.value = 0;
+                  }, 500);
                   action.onPress();
                }}
-               className="bg-primary mx-1 size-14 items-center justify-center rounded-[18px]">
-               <ThemedIcon name="plus" size="xxl" color="inverse" strokeWidth={2.4} />
+               className="bg-primary size-13 items-center justify-center rounded-full">
+               <Animated.View style={turnStyle}>
+                  <ThemedIcon name="plus" size="xl" color="inverse" strokeWidth={2.4} />
+               </Animated.View>
             </ThemedPressable>
             {right.map(renderTab)}
          </Row>

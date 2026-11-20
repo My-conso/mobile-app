@@ -1,6 +1,7 @@
 // src/components/layout/screen.tsx
 import React from 'react';
-import { StatusBar, StatusBarStyle, TouchableWithoutFeedback } from 'react-native';
+import { StatusBar, StatusBarStyle, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
    KeyboardAvoidingView,
    KeyboardController,
@@ -10,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Skeleton } from 'boneyard-js/native';
 import { ThemedView } from '../ui/themed-view';
 import { cn } from '@/src/utils/tailwind';
+import { useThemeColor } from '@/src/hooks/use-theme-color';
 
 export type SafeAreaEdge = 'top' | 'bottom' | 'left' | 'right';
 
@@ -61,6 +63,10 @@ export const Screen: React.FC<ScreenProps> = ({
 }) => {
    const insets = useSafeAreaInsets();
    const keyboardVisible = useKeyboardState(s => s.isVisible);
+   // Night gradient behind every screen (static, drawn once)
+   const gradientTop = useThemeColor('--color-background-top', 'backgroundTop');
+   const gradientMid = useThemeColor('--color-background', 'background');
+   const gradientBottom = useThemeColor('--color-background-bottom', 'backgroundBottom');
 
    const hideKeyboard = () => {
       if (withDismissKeyboardOnOutside) {
@@ -79,6 +85,12 @@ export const Screen: React.FC<ScreenProps> = ({
    const content = (
       <ThemedView
          className={cn('flex-1', withSmallPadding ? 'px-4' : '', backgroundColor, className)}>
+         <LinearGradient
+            colors={[gradientTop, gradientMid, gradientBottom]}
+            locations={[0, 0.5, 1]}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+         />
          <StatusBar barStyle={statusBarStyle} backgroundColor={statusBarColor} translucent />
          {resolvedChildren}
       </ThemedView>

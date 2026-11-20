@@ -1,7 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Animated, {
+   Easing,
+   ReduceMotion,
+   useAnimatedProps,
+   useSharedValue,
+   withDelay,
+   withTiming,
+} from 'react-native-reanimated';
 import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg';
 import { ThemedView } from './themed-view';
 import { useThemeColor } from '@/src/hooks/use-theme-color';
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const AnimatedLine = Animated.createAnimatedComponent(Line);
 
 export interface BarItem {
    label: string;
@@ -21,6 +32,79 @@ interface BarChartProps {
 const HEIGHT = 214;
 const PAD = { top: 22, right: 4, bottom: 26, left: 34 };
 const MAX_BAR = 34;
+
+/** One bar that grows from the baseline (640 ms, staggered). Runs on the UI thread through animated SVG props. */
+function GrowingBar({
+   x,
+   top,
+   base,
+   width,
+   fill,
+   index,
+}: {
+   x: number;
+   top: number;
+   base: number;
+   width: number;
+   fill: string;
+   index: number;
+}) {
+   const p = useSharedValue(0);
+   useEffect(() => {
+      p.value = withDelay(
+         500 + index * 140,
+         withTiming(1, {
+            duration: 640,
+            easing: Easing.out(Easing.cubic),
+            reduceMotion: ReduceMotion.System,
+         })
+      );
+   }, [index, p]);
+   const props = useAnimatedProps(() => {
+      const h = Math.max((base - top) * p.value, 2);
+      return { y: base - h, height: h };
+   });
+   return <AnimatedRect x={x} width={width} rx={7} fill={fill} animatedProps={props} />;
+}
+
+/** The dashed average line draws itself from left to right once the bars are up. */
+function DrawingLine({
+   x1,
+   x2,
+   y,
+   stroke,
+   delay,
+}: {
+   x1: number;
+   x2: number;
+   y: number;
+   stroke: string;
+   delay: number;
+}) {
+   const p = useSharedValue(0);
+   useEffect(() => {
+      p.value = withDelay(
+         delay,
+         withTiming(1, {
+            duration: 800,
+            easing: Easing.out(Easing.cubic),
+            reduceMotion: ReduceMotion.System,
+         })
+      );
+   }, [delay, p]);
+   const props = useAnimatedProps(() => ({ x2: x1 + (x2 - x1) * p.value }));
+   return (
+      <AnimatedLine
+         x1={x1}
+         y1={y}
+         y2={y}
+         stroke={stroke}
+         strokeWidth={2}
+         strokeDasharray="6 5"
+         animatedProps={props}
+      />
+   );
+}
 
 /** Thin bars per fill-up, the last one highlighted, dashed average line. Theme-aware SVG. */
 export function BarChart({ items, average, format, label }: BarChartProps) {
@@ -47,33 +131,75 @@ export function BarChart({ items, average, format, label }: BarChartProps) {
    const ticks = [hi - pad * 0.3, (hi + lo) / 2, lo + pad * 0.3];
 
    return (
-      <ThemedView bg="transparent" onLayout={e => setWidth(e.nativeEvent.layout.width)} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <ThemedView
+         bg="transparent"
+         onLayout={e => setWidth(e.nativeEvent.layout.width)}
+         accessible
+         accessibilityRole="image"
+         accessibilityLabel={label}>
          {width > 0 && (
             <Svg width={width} height={HEIGHT}>
                {ticks.map((t, i) => (
-                  <SvgText key={i} x={PAD.left - 8} y={y(t) + 4} fontSize={11} fill={muted} textAnchor="end">
+                  <SvgText
+                     key={i}
+                     x={PAD.left - 8}
+                     y={y(t) + 4}
+                     fontSize={11}
+                     fill={muted}
+                     textAnchor="end">
                      {format(t)}
                   </SvgText>
                ))}
-               <Line x1={PAD.left} x2={width - PAD.right} y1={base} y2={base} stroke={bar} strokeWidth={1} />
+               <Line
+                  x1={PAD.left}
+                  x2={width - PAD.right}
+                  y1={base}
+                  y2={base}
+                  stroke={bar}
+                  strokeWidth={1}
+               />
                {items.map((it, i) => {
                   const last = i === items.length - 1;
                   const cx = PAD.left + slot * i + slot / 2;
                   const top = y(it.value);
                   return (
                      <React.Fragment key={i}>
-                        <Rect x={cx - barW / 2} y={top} width={barW} height={Math.max(base - top, 2)} rx={7} fill={last ? highlight : bar} />
-                        <SvgText x={cx} y={top - 7} fontSize={13} fontWeight="600" fill={last ? highlight : text} textAnchor="middle">
+                        <GrowingBar
+                           x={cx - barW / 2}
+                           top={top}
+                           base={base}
+                           width={barW}
+                           fill={last ? highlight : bar}
+                           index={i}
+                        />
+                        <SvgText
+                           x={cx}
+                           y={top - 7}
+                           fontSize={13}
+                           fontWeight="600"
+                           fill={last ? highlight : text}
+                           textAnchor="middle">
                            {format(it.value)}
                         </SvgText>
-                        <SvgText x={cx} y={HEIGHT - 6} fontSize={12} fill={muted} textAnchor="middle">
+                        <SvgText
+                           x={cx}
+                           y={HEIGHT - 6}
+                           fontSize={12}
+                           fill={muted}
+                           textAnchor="middle">
                            {it.label}
                         </SvgText>
                      </React.Fragment>
                   );
                })}
                {average != null && (
-                  <Line x1={PAD.left} x2={width - PAD.right} y1={y(average)} y2={y(average)} stroke={dashed} strokeWidth={2} strokeDasharray="6 5" />
+                  <DrawingLine
+                     x1={PAD.left}
+                     x2={width - PAD.right}
+                     y={y(average)}
+                     stroke={dashed}
+                     delay={500 + items.length * 140 + 300}
+                  />
                )}
             </Svg>
          )}

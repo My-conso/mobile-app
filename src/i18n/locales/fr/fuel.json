@@ -46,7 +46,6 @@
       "trend_up": "Ton dernier plein a été un peu plus gourmand",
       "trend_down": "Ton dernier plein a été plus économe",
       "trend_alert": "Ta consommation a augmenté. Vérifie : pression des pneus, filtre à air, bougie, courroie et galets.",
-      "last_entry": "Ton dernier plein",
       "need_two_fulls": "Il faut au moins deux pleins complets pour calculer.",
       "welcome_title": "Bienvenue sur ToMo",
       "welcome_text": "Ajoute ta moto pour suivre ta consommation. Tout reste sur ton téléphone.",
@@ -54,15 +53,18 @@
       "empty_title": "Ton premier plein",
       "empty_text": "Fais le plein jusqu'à ton repère habituel, puis note le compteur et les litres. Dès le deuxième plein, tu connaîtras ta vraie consommation.",
       "empty_cta": "Ajouter mon premier plein",
-      "avg_unit": "litres\npour 100 km",
       "avg_per_litre": "Avec 1 litre, tu fais environ {{km}} km.",
-      "cost_title": "Ce que ça te coûte",
-      "cost_unit": "pour 100 km",
-      "month_spent": "Ce mois-ci, tu as mis {{amount}} d'essence.",
-      "last_date": "Date",
       "last_liters": "Essence mise",
       "last_odometer": "Compteur à ce moment",
-      "liters_value": "{{liters}} litres"
+      "unit_l100": "L/100 km",
+      "cost_per_100": "Pour 100 km",
+      "month_label": "Essence ce mois-ci",
+      "see_all": "Tout voir",
+      "last_title": "Ton dernier plein · {{date}}",
+      "photo": "Ta photo",
+      "edit_vehicle": "Modifier ma moto",
+      "moto_alt": "Illustration de ta moto",
+      "unit_litres": "litres"
    },
    "form": {
       "cost_estimate": "Coût : {{total}} (à {{price}} / L)",
@@ -86,7 +88,7 @@
       "info_none": "Remplis le kilométrage et les litres pour voir le calcul.",
       "save": "Enregistrer le plein",
       "saved_title": "C'est noté !",
-      "saved_body": "{{l100}} L/100 km sur ces {{km}} km.\nTa moyenne passe à {{avg}}.",
+      "saved_body": "Sur ces {{km}} km.\nTa moyenne passe à {{avg}}.",
       "back_home": "Retour à l'accueil",
       "delete_title": "Supprimer ce plein ?",
       "delete_text": "Cette action est définitive.",
@@ -171,7 +173,8 @@
       "erase_text_2": "Cette action est irréversible. Continuer ?",
       "erase_done": "Données effacées",
       "footer": "ToMo {{version}}\ntes données restent sur ce téléphone",
-      "edit": "Modifier"
+      "edit": "Modifier",
+      "hold_hint": "Maintiens appuyé"
    },
    "vehicle_form": {
       "title_new": "Nouvelle moto",

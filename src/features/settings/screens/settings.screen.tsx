@@ -13,6 +13,7 @@ import { ScrollContainer } from '@/src/components/layout/scroll-container';
 import { ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
 import { SegmentedControl } from '@/src/components/ui/themed-segmented-control';
+import { HoldRow } from '@/src/components/ui/themed-hold-row';
 import { RowGroup } from '@/src/components/ui/themed-row-group';
 import { ListRow } from '@/src/components/ui/themed-list-row';
 import { useActiveVehicle, useFuelStore } from '@/src/features/fuel/store';
@@ -240,12 +241,11 @@ export function SettingsScreen() {
                   chevron={false}
                   onPress={importBackup}
                />
-               <ListRow
+               <HoldRow
                   label={t('settings.erase')}
+                  hint={t('settings.hold_hint')}
                   icon="trash"
-                  tone="danger"
-                  chevron={false}
-                  onPress={eraseAll}
+                  onComplete={eraseAll}
                />
             </RowGroup>
 

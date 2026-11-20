@@ -394,7 +394,7 @@ export const ThemedInput = forwardRef<TextInput, ThemedInputProps>(
                   }}
                   className={cn(
                      'flex-1 bg-transparent p-0 text-foreground',
-                     numeric ? 'font-display-semibold' : 'font-sans',
+                     numeric ? 'font-display-bold' : 'font-sans',
                      sizeStyle.text,
                      disabled && 'opacity-50',
                      inputClassName

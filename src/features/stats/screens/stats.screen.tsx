@@ -7,17 +7,39 @@ import { ThemedText } from '@/src/components/ui/themed-text';
 import { SegmentedControl } from '@/src/components/ui/themed-segmented-control';
 import { BarChart } from '@/src/components/ui/themed-bar-chart';
 import { RowGroup } from '@/src/components/ui/themed-row-group';
+import { Cascade } from '@/src/components/ui/themed-cascade';
+import { AnimatedNumber } from '@/src/components/ui/themed-animated-number';
 import { VehicleSwitcher } from '@/src/features/fuel/components/vehicle-switcher';
 import { useConsumption, useFuelStore, useVehicleEntries } from '@/src/features/fuel/store';
-import { entryCost, filterSegmentsByPeriod, periodStart, summarize, type Period, type Segment } from '@/src/lib/consumption';
-import { formatDate, formatDayMonth, formatDayMonthName, formatKm, formatL100, formatLiters, formatNumber } from '@/src/lib/format';
+import {
+   entryCost,
+   filterSegmentsByPeriod,
+   periodStart,
+   summarize,
+   type Period,
+   type Segment,
+} from '@/src/lib/consumption';
+import {
+   formatDate,
+   formatDayMonth,
+   formatDayMonthName,
+   formatKm,
+   formatL100,
+   formatLiters,
+   formatNumber,
+} from '@/src/lib/format';
 
 /** Beyond this many fill-ups the bars get too thin to read: keep the latest ones. */
 const MAX_BARS = 10;
 
 function TableRow({ label, value }: { label: string; value: string }) {
    return (
-      <Row justify="between" items="center" gap="md" bg="transparent" className="min-h-12 px-4 py-3">
+      <Row
+         justify="between"
+         items="center"
+         gap="md"
+         bg="transparent"
+         className="min-h-12 px-4 py-3">
          <ThemedText variant="body-small" color="secondary" className="flex-1">
             {label}
          </ThemedText>
@@ -38,16 +60,27 @@ export function StatsScreen() {
    const filtered = useMemo(() => filterSegmentsByPeriod(segments, period), [segments, period]);
    const summary = useMemo(() => summarize(filtered), [filtered]);
 
-   const best = useMemo(() => filtered.reduce<Segment | null>((b, s) => (!b || s.l100 < b.l100 ? s : b), null), [filtered]);
-   const worst = useMemo(() => filtered.reduce<Segment | null>((w, s) => (!w || s.l100 > w.l100 ? s : w), null), [filtered]);
+   const best = useMemo(
+      () => filtered.reduce<Segment | null>((b, s) => (!b || s.l100 < b.l100 ? s : b), null),
+      [filtered]
+   );
+   const worst = useMemo(
+      () => filtered.reduce<Segment | null>((w, s) => (!w || s.l100 > w.l100 ? s : w), null),
+      [filtered]
+   );
 
    const spent = useMemo(() => {
       const start = periodStart(period);
-      return entries.filter(e => !start || Date.parse(e.date) >= start.getTime()).reduce((sum, e) => sum + (entryCost(e) ?? 0), 0);
+      return entries
+         .filter(e => !start || Date.parse(e.date) >= start.getTime())
+         .reduce((sum, e) => sum + (entryCost(e) ?? 0), 0);
    }, [entries, period]);
 
    const bars = filtered.slice(-MAX_BARS);
-   const items = bars.map(s => ({ label: bars.length <= 5 ? formatDayMonthName(s.date) : formatDayMonth(s.date), value: s.l100 }));
+   const items = bars.map(s => ({
+      label: bars.length <= 5 ? formatDayMonthName(s.date) : formatDayMonth(s.date),
+      value: s.l100,
+   }));
 
    const periods: { value: Period; label: string }[] = [
       { value: '3m', label: t('stats.p3m') },
@@ -62,68 +95,110 @@ export function StatsScreen() {
    return (
       <Screen safeAreaEdges={['top']} withSmallPadding={false} withDismissKeyboardOnOutside={false}>
          <ScrollContainer contentContainerClassName="gap-4 px-5 pt-7 pb-6">
-            <ThemedText variant="h2">{t('stats.title')}</ThemedText>
+            <Cascade index={0}>
+               <ThemedText variant="h1" className="text-[34px] leading-10">
+                  {t('stats.title')}
+               </ThemedText>
+            </Cascade>
             <VehicleSwitcher />
-            <SegmentedControl options={periods} value={period} onChange={setPeriod} />
+            <Cascade index={1}>
+               <SegmentedControl options={periods} value={period} onChange={setPeriod} />
+            </Cascade>
 
-            <ThemedView variant="card" rounded="hero" gap="md" className="p-5">
-               <Row justify="between" items="center" gap="md" bg="transparent">
-                  <ThemedText variant="body-small" color="secondary">
-                     {t('stats.chart_title')}
-                  </ThemedText>
-                  {summary.l100 != null ? (
-                     <Row items="center" gap="sm" bg="transparent">
-                        <ThemedView className="border-foreground-muted w-4 border-t-2 border-dashed" />
-                        <ThemedText variant="caption" color="secondary">
-                           {t('stats.chart_average', { value: formatL100(summary.l100) })}
-                        </ThemedText>
-                     </Row>
-                  ) : null}
+            <Cascade index={2}>
+               <ThemedView variant="card" rounded="hero" gap="md" className="p-5">
+                  <Row justify="between" items="center" gap="md" bg="transparent">
+                     <ThemedText variant="body-small" color="secondary">
+                        {t('stats.chart_title')}
+                     </ThemedText>
+                     {summary.l100 != null ? (
+                        <Row items="center" gap="sm" bg="transparent">
+                           <ThemedView className="border-foreground-muted w-4 border-t-2 border-dashed" />
+                           <ThemedText variant="caption" color="secondary">
+                              {t('stats.chart_average', { value: formatL100(summary.l100) })}
+                           </ThemedText>
+                        </Row>
+                     ) : null}
+                  </Row>
+                  {items.length > 0 ? (
+                     <BarChart
+                        key={period}
+                        items={items}
+                        average={summary.l100}
+                        format={formatL100}
+                        label={t('stats.chart_aria', {
+                           values: items.map(i => `${i.label} ${formatL100(i.value)}`).join(', '),
+                           avg: summary.l100 != null ? formatL100(summary.l100) : dash,
+                        })}
+                     />
+                  ) : (
+                     <ThemedText color="secondary" className="py-6">
+                        {t('stats.chart_empty')}
+                     </ThemedText>
+                  )}
+               </ThemedView>
+            </Cascade>
+
+            <Cascade index={3}>
+               <Row gap="md" bg="transparent">
+                  <ThemedView variant="card" rounded="card" gap="sm" className="flex-1 p-4">
+                     <ThemedText variant="caption" color="secondary">
+                        {t('stats.best')}
+                     </ThemedText>
+                     {best ? (
+                        <AnimatedNumber
+                           key={`best-${period}`}
+                           value={best.l100}
+                           decimals={2}
+                           weight="bold"
+                           color="primary"
+                           className="text-[28px] leading-8"
+                        />
+                     ) : (
+                        <ThemedText variant="h2">{dash}</ThemedText>
+                     )}
+                     <ThemedText variant="caption" color="muted">
+                        {caption(best)}
+                     </ThemedText>
+                  </ThemedView>
+                  <ThemedView variant="card" rounded="card" gap="sm" className="flex-1 p-4">
+                     <ThemedText variant="caption" color="secondary">
+                        {t('stats.worst')}
+                     </ThemedText>
+                     {worst ? (
+                        <AnimatedNumber
+                           key={`worst-${period}`}
+                           value={worst.l100}
+                           decimals={2}
+                           weight="bold"
+                           className="text-[28px] leading-8"
+                        />
+                     ) : (
+                        <ThemedText variant="h2">{dash}</ThemedText>
+                     )}
+                     <ThemedText variant="caption" color="muted">
+                        {caption(worst)}
+                     </ThemedText>
+                  </ThemedView>
                </Row>
-               {items.length > 0 ? (
-                  <BarChart
-                     items={items}
-                     average={summary.l100}
-                     format={formatL100}
-                     label={t('stats.chart_aria', { values: items.map(i => `${i.label} ${formatL100(i.value)}`).join(', '), avg: summary.l100 != null ? formatL100(summary.l100) : dash })}
+            </Cascade>
+
+            <Cascade index={4}>
+               <RowGroup>
+                  <TableRow
+                     label={t('stats.distance')}
+                     value={`${formatKm(summary.totalKm)} ${t('unit.km')}`}
                   />
-               ) : (
-                  <ThemedText color="secondary" className="py-6">
-                     {t('stats.chart_empty')}
-                  </ThemedText>
-               )}
-            </ThemedView>
-
-            <Row gap="md" bg="transparent">
-               <ThemedView variant="card" rounded="card" gap="sm" className="flex-1 p-4">
-                  <ThemedText variant="caption" color="secondary">
-                     {t('stats.best')}
-                  </ThemedText>
-                  <ThemedText numeric weight="semibold" color="primary" className="text-[22px]">
-                     {best ? formatL100(best.l100) : dash}
-                  </ThemedText>
-                  <ThemedText variant="caption" color="muted">
-                     {caption(best)}
-                  </ThemedText>
-               </ThemedView>
-               <ThemedView variant="card" rounded="card" gap="sm" className="flex-1 p-4">
-                  <ThemedText variant="caption" color="secondary">
-                     {t('stats.worst')}
-                  </ThemedText>
-                  <ThemedText numeric weight="semibold" className="text-[22px]">
-                     {worst ? formatL100(worst.l100) : dash}
-                  </ThemedText>
-                  <ThemedText variant="caption" color="muted">
-                     {caption(worst)}
-                  </ThemedText>
-               </ThemedView>
-            </Row>
-
-            <RowGroup>
-               <TableRow label={t('stats.distance')} value={`${formatKm(summary.totalKm)} ${t('unit.km')}`} />
-               <TableRow label={t('stats.fuel')} value={`${formatLiters(summary.totalLiters)} ${t('unit.l')}`} />
-               <TableRow label={t('stats.spent')} value={`${formatNumber(spent, 0)} ${currency}`} />
-            </RowGroup>
+                  <TableRow
+                     label={t('stats.fuel')}
+                     value={`${formatLiters(summary.totalLiters)} ${t('unit.l')}`}
+                  />
+                  <TableRow
+                     label={t('stats.spent')}
+                     value={`${formatNumber(spent, 0)} ${currency}`}
+                  />
+               </RowGroup>
+            </Cascade>
          </ScrollContainer>
       </Screen>
    );

@@ -18,7 +18,7 @@ export function TabNavigator() {
    return (
       <Tab.Navigator
          backBehavior="history"
-         screenOptions={{ headerShown: false }}
+         screenOptions={{ headerShown: false, animation: 'fade' }}
          tabBar={props => (
             <TabBar
                {...props}

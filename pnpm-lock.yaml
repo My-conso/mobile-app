@@ -11,7 +11,7 @@ importers:
       '@expo-google-fonts/inter':
         specifier: ^0.4.2
         version: 0.4.2
-      '@expo-google-fonts/space-grotesk':
+      '@expo-google-fonts/kanit':
         specifier: ^0.4.1
         version: 0.4.1
       '@expo/vector-icons':
@@ -812,11 +812,11 @@ packages:
   '@expo-google-fonts/inter@0.4.2':
     resolution: {integrity: sha512-syfiImMaDmq7cFi0of+waE2M4uSCyd16zgyWxdPOY7fN2VBmSLKEzkfbZgeOjJq61kSqPBNNtXjggiQiSD6gMQ==}
 
+  '@expo-google-fonts/kanit@0.4.1':
+    resolution: {integrity: sha512-bm5lhr3iUjMtAzsr9wStxd307T2kK2e5LUVH1ALbp4/HKcluNw5MYLFYzcN93dnbo02x4ulRdzSeKi1nnT46Zg==}
+
   '@expo-google-fonts/material-symbols@0.4.50':
     resolution: {integrity: sha512-XNSgSfd+1p6wqRAzzhrckGngHJQ1/z+oCMdI5FN+x/VnDeMMFGkXsuRNPYcZTYYff1GwVwx4u6Gqnb30aALysw==}
-
-  '@expo-google-fonts/space-grotesk@0.4.1':
-    resolution: {integrity: sha512-ZVQYw4Ok/pgcSJiufP8oRZE3AVxS9xtmKEUfsurbHkHNdMc/GA1gDXP9G4Cr7KL4KqSc0haexR2TuMigotCn4Q==}
 
   '@expo/cli@55.0.36':
     resolution: {integrity: sha512-jVMEXmxeUKXAzJdRWQer7fyogjPMYiTbrGOrlioJlwMuFqKfao3FeFInmATMNGLhNN01aBs/s6pnJKqiAdlUQg==}
@@ -5810,9 +5810,9 @@ snapshots:
 
   '@expo-google-fonts/inter@0.4.2': {}
 
-  '@expo-google-fonts/material-symbols@0.4.50': {}
+  '@expo-google-fonts/kanit@0.4.1': {}
 
-  '@expo-google-fonts/space-grotesk@0.4.1': {}
+  '@expo-google-fonts/material-symbols@0.4.50': {}
 
   '@expo/cli@55.0.36(@expo/dom-webview@55.0.6)(expo-constants@55.0.17(expo@55.0.31)(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.0)))(expo-font@55.0.8(expo@55.0.31)(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.0))(react@19.2.0))(expo@55.0.31)(react-dom@19.2.0(react@19.2.0))(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)':
     dependencies:

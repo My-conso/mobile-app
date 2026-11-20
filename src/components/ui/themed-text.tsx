@@ -77,8 +77,8 @@ export interface ThemedTextProps extends TextProps {
 // Variant = size (+ default weight). The font family is resolved separately: Inter for texts,
 // Space Grotesk for figures, one family per weight (custom fonts have no real font-weight).
 const variantStyles: Record<TextVariant, { size: string; weight: TextWeight }> = {
-   h1: { size: 'text-3xl', weight: 'semibold' },
-   h2: { size: 'text-[22px]', weight: 'semibold' },
+   h1: { size: 'text-3xl', weight: 'bold' },
+   h2: { size: 'text-[22px]', weight: 'bold' },
    h3: { size: 'text-lg', weight: 'semibold' },
    'body-large': { size: 'text-[17px]', weight: 'normal' },
    body: { size: 'text-[15px]', weight: 'normal' },
@@ -171,6 +171,25 @@ const leadingStyles = {
  * @param {string} className - Additional class names for the container (optional)
  * @param {string} testID - Test ID for the component (optional)
  */
+/** Tailwind classes of a text (shared with figures that animate on the UI thread, see AnimatedNumber). */
+export function textClassName({
+   variant = 'body',
+   weight,
+   color = 'default',
+   numeric = false,
+   className = '',
+}: Pick<ThemedTextProps, 'variant' | 'weight' | 'color' | 'numeric' | 'className'>): string {
+   return cn(
+      variantStyles[variant].size,
+      (numeric || variant === 'h1' || variant === 'h2' ? numericFamily : textFamily)[
+         weight ?? variantStyles[variant].weight
+      ],
+      numeric && 'tabular-nums',
+      colorStyles[color],
+      className
+   );
+}
+
 export const ThemedText: React.FC<ThemedTextProps> = ({
    children,
    variant = 'body',
@@ -192,7 +211,10 @@ export const ThemedText: React.FC<ThemedTextProps> = ({
    const textClasses = cn(
       // Size, then the font family for the effective weight
       variantStyles[variant].size,
-      (numeric ? numericFamily : textFamily)[weight ?? variantStyles[variant].weight],
+      // Titles (h1, h2) and figures are Kanit italic; running text is Inter, never italic
+      (numeric || variant === 'h1' || variant === 'h2' ? numericFamily : textFamily)[
+         weight ?? variantStyles[variant].weight
+      ],
       numeric && 'tabular-nums',
 
       // Color

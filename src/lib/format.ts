@@ -69,6 +69,12 @@ export function formatDayMonthName(iso: string): string {
    return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
+/** "lundi 30 mars" */
+export function formatDayMonthLong(iso: string): string {
+   const d = new Date(iso);
+   return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
 /** "lundi 30 mars 2026" */
 export function formatDateLong(iso: string): string {
    const d = new Date(iso);
@@ -87,7 +93,20 @@ export function formatMonthYear(iso: string): string {
    return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-const MONTHS_SHORT = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+const MONTHS_SHORT = [
+   'Jan',
+   'Fév',
+   'Mar',
+   'Avr',
+   'Mai',
+   'Juin',
+   'Juil',
+   'Août',
+   'Sep',
+   'Oct',
+   'Nov',
+   'Déc',
+];
 
 /** "Nov": short month label, no dot (history rows, charts) */
 export function formatMonthShort(iso: string): string {

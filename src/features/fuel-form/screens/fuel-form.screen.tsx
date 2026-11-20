@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
-import Animated, { FadeIn, ReduceMotion, ZoomIn } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import Animated, { Easing, FadeIn, ReduceMotion } from 'react-native-reanimated';
+import { Cascade } from '@/src/components/ui/themed-cascade';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/layout/screen';
 import { ScreenHeader } from '@/src/components/layout/screen-header';
 import { FormFooter } from '@/src/components/layout/form-footer';
+import { SaveButton } from '../components/save-button';
+import { AnimatedNumber } from '@/src/components/ui/themed-animated-number';
+import { haptic } from '@/src/lib/haptics';
 import { ScrollContainer } from '@/src/components/layout/scroll-container';
 import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
@@ -89,6 +92,8 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
    const [submitted, setSubmitted] = useState(false);
    /** Id of the entry just saved: shows the "C'est noté !" screen */
    const [savedId, setSavedId] = useState<string | null>(null);
+   /** The save button is shrinking into a circle: the entry is written once that animation has played */
+   const [saving, setSaving] = useState(false);
 
    const lastKnownKm = useMemo(() => {
       const others = sortEntries(entries.filter(e => e.id !== entryId));
@@ -181,7 +186,6 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
          station: existing?.station,
          note: existing?.note,
       };
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       if (isEdit && entryId) {
          updateEntry(entryId, input);
          setSavedId(entryId);
@@ -190,17 +194,23 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
       }
    };
 
+   const runSave = () => {
+      haptic.light();
+      setSaving(true);
+      setTimeout(persist, 620);
+   };
+
    const onSave = () => {
       setSubmitted(true);
       if (validation.hasErrors) return;
       if (validation.warnings.length > 0) {
          Alert.alert(t('form.warning_title'), validation.warnings.map(warningText).join('\n\n'), [
             { text: t('form.warning_back'), style: 'cancel' },
-            { text: t('form.warning_confirm'), onPress: persist },
+            { text: t('form.warning_confirm'), onPress: runSave },
          ]);
          return;
       }
-      persist();
+      runSave();
    };
 
    const onDelete = () =>
@@ -329,9 +339,14 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
                      </ThemedText>
                   </ThemedView>
                   <Row items="baseline" gap="xs" bg="transparent">
-                     <ThemedText numeric weight="semibold" color="primary" className="text-[22px]">
-                        {formatL100(segment.l100)}
-                     </ThemedText>
+                     <AnimatedNumber
+                        value={segment.l100}
+                        decimals={2}
+                        duration={700}
+                        weight="bold"
+                        color="primary"
+                        className="text-[26px] leading-8"
+                     />
                      <ThemedText variant="caption" weight="medium" color="primary">
                         L/100
                      </ThemedText>
@@ -364,7 +379,7 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
          </ScrollContainer>
 
          <FormFooter>
-            <ThemedButton title={t('form.save')} size="lg" fullWidth onPress={onSave} />
+            <SaveButton title={t('form.save')} saving={saving} onPress={onSave} />
          </FormFooter>
       </Screen>
    );
@@ -374,12 +389,14 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
 function SavedConfirmation({ entryId, onDone }: { entryId: string; onDone: () => void }) {
    const { t } = useTranslation('fuel');
    const result = useConsumption();
+   useEffect(() => {
+      haptic.success();
+   }, []);
    const segment = result.info[entryId]?.segment;
    const average = result.summary.l100;
    const body =
       segment && average != null && result.info[entryId]?.role === 'segment'
          ? t('form.saved_body', {
-              l100: formatL100(segment.l100),
               km: formatKm(segment.distanceKm),
               avg: formatL100(average),
            })
@@ -390,11 +407,32 @@ function SavedConfirmation({ entryId, onDone }: { entryId: string; onDone: () =>
          <Animated.View
             entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
             className="flex-1 items-center justify-center gap-5 px-8">
-            <Animated.View entering={ZoomIn.duration(420).reduceMotion(ReduceMotion.System)}>
+            <Animated.View
+               entering={FadeIn.duration(420)
+                  .easing(Easing.out(Easing.back(2.2)))
+                  .withInitialValues({ opacity: 0, transform: [{ scale: 0.4 }] })
+                  .reduceMotion(ReduceMotion.System)}>
                <ThemedView className="bg-primary size-22 items-center justify-center rounded-full">
                   <ThemedIcon name="check" customSize={44} color="inverse" strokeWidth={2.6} />
                </ThemedView>
             </Animated.View>
+            {segment && body ? (
+               <Cascade index={2}>
+                  <Row items="baseline" gap="sm" bg="transparent">
+                     <AnimatedNumber
+                        value={segment.l100}
+                        decimals={2}
+                        duration={800}
+                        weight="bold"
+                        color="primary"
+                        className="text-[64px] leading-[68px]"
+                     />
+                     <ThemedText numeric weight="semibold" color="primary" className="text-lg">
+                        L/100 km
+                     </ThemedText>
+                  </Row>
+               </Cascade>
+            ) : null}
             <ThemedView bg="transparent" gap="sm" className="items-center">
                <ThemedText variant="h2">{t('form.saved_title')}</ThemedText>
                {body ? (

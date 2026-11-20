@@ -46,7 +46,6 @@
       "trend_up": "Nihoatra kely ny solika nampiasainao tamin'ny plein farany",
       "trend_down": "Nihena ny solika nampiasainao tamin'ny plein farany",
       "trend_alert": "Nitombo ny fandaniana. Hamarino : tsindry rivotra, sivana rivotra, bougie, courroie ary galets.",
-      "last_entry": "Ny plein farany nataonao",
       "need_two_fulls": "Mila plein feno roa farafaharatsiny vao azo kajiana.",
       "welcome_title": "Tonga soa eto amin'ny ToMo",
       "welcome_text": "Ampidiro ny motonao hanaraha-maso ny fandanianao. Mijanona ato amin'ny findainao ny zava-drehetra.",
@@ -54,15 +53,18 @@
       "empty_title": "Ny plein-nao voalohany",
       "empty_text": "Manaova plein ohatran'ny mahazatra anao, avy eo soraty ny compteur sy ny litatra. Manomboka amin'ny plein faharoa, ho fantatra ny tena fandanianao marina.",
       "empty_cta": "Hanisy ny plein-nao voalohany",
-      "avg_unit": "litatra\nisaky ny 100 km",
       "avg_per_litre": "Amin'ny litatra 1, mandeha {{km}} km eo ho eo ianao.",
-      "cost_title": "Ny lany aminao",
-      "cost_unit": "isaky ny 100 km",
-      "month_spent": "Tamin'ity volana ity, nampiditra solika {{amount}} ianao.",
-      "last_date": "Daty",
       "last_liters": "Solika nampidirina",
       "last_odometer": "Compteur tamin'izay",
-      "liters_value": "{{liters}} litatra"
+      "unit_l100": "L/100 km",
+      "cost_per_100": "Isaky ny 100 km",
+      "month_label": "Solika amin'ity volana ity",
+      "see_all": "Hijery daholo",
+      "last_title": "Ny plein farany · {{date}}",
+      "photo": "Sary",
+      "edit_vehicle": "Hanova ny motoko",
+      "moto_alt": "Sary an'ny motonao",
+      "unit_litres": "litatra"
    },
    "form": {
       "cost_estimate": "Vidiny: {{total}} ({{price}} / L)",
@@ -86,7 +88,7 @@
       "info_none": "Fenoy ny kilaometatra sy ny litatra mba hahitana ny kajy.",
       "save": "Tehirizo ny plein",
       "saved_title": "Voasoratra!",
-      "saved_body": "{{l100}} L/100 km tamin'ireo {{km}} km ireo.\nMiova ho {{avg}} ny salanisanao.",
+      "saved_body": "Tamin'ireo {{km}} km ireo.\nMiova ho {{avg}} ny salanisanao.",
       "back_home": "Hiverina any amin'ny fandraisana",
       "delete_title": "Hamafa ity plein ity?",
       "delete_text": "Tsy azo averina ity.",
@@ -171,7 +173,8 @@
       "erase_text_2": "Tsy azo averina ity. Hotohizana ve?",
       "erase_done": "Voafafa ny angona",
       "footer": "ToMo {{version}}\nmijanona ato amin'ity finday ity ny angonao",
-      "edit": "Hanova"
+      "edit": "Hanova",
+      "hold_hint": "Tsindrio ela"
    },
    "vehicle_form": {
       "title_new": "Moto vaovao",

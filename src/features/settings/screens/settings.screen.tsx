@@ -150,7 +150,11 @@ export function SettingsScreen() {
    ];
 
    return (
-      <Screen safeAreaEdges={['top']} withSmallPadding={false} withDismissKeyboardOnOutside={false}>
+      <Screen
+         safeAreaEdges={['top']}
+         withSmallPadding={false}
+         withDismissKeyboardOnOutside={false}
+         withGradient={false}>
          <ScrollContainer contentContainerClassName="gap-3 px-5 pt-7 pb-6">
             <ThemedText variant="h2">{t('settings.title')}</ThemedText>
 

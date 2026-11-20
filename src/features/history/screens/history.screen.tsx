@@ -48,7 +48,13 @@ const BADGE: Record<string, { key: string; tone: StatusTone }> = {
 };
 
 /** One list row. Memoised so recycled cells only re-render when their own data changes. */
-const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, currency, onOpen }: RowProps) {
+const HistoryListRow = memo(function HistoryListRow({
+   item,
+   info,
+   bestEntryId,
+   currency,
+   onOpen,
+}: RowProps) {
    const { t } = useTranslation('fuel');
 
    if (item.type === 'header') {
@@ -58,7 +64,10 @@ const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, c
                {item.title}
             </ThemedText>
             <ThemedText variant="caption" color="secondary">
-               {t('history.month_total', { liters: formatLiters(item.liters), cost: `${formatNumber(item.cost, 0)} ${currency}` })}
+               {t('history.month_total', {
+                  liters: formatLiters(item.liters),
+                  cost: `${formatNumber(item.cost, 0)} ${currency}`,
+               })}
             </ThemedText>
          </Row>
       );
@@ -66,7 +75,12 @@ const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, c
 
    if (item.type === 'note') {
       return (
-         <Row gap="sm" items="start" bg="transparent" rounded="lg" className="border-border mt-4 border border-dashed p-3.5">
+         <Row
+            gap="sm"
+            items="start"
+            bg="transparent"
+            rounded="lg"
+            className="border-border mt-4 border border-dashed p-3.5">
             <ThemedIcon name="info" size="sm" color="secondary" />
             <ThemedText variant="caption" color="secondary" className="flex-1 leading-5">
                {t('history.note')}
@@ -80,7 +94,10 @@ const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, c
    const role = i?.role;
    const cost = entryCost(entry);
    const liters = formatLiters(entry.liters);
-   const amount = cost != null ? `${t('history.row_detail', { liters })} · ${formatNumber(cost, 0)} ${currency}` : t('history.row_detail', { liters });
+   const amount =
+      cost != null
+         ? `${t('history.row_detail', { liters })} · ${formatNumber(cost, 0)} ${currency}`
+         : t('history.row_detail', { liters });
    const situation =
       role === 'broken'
          ? t('history.detail_broken')
@@ -98,10 +115,16 @@ const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, c
          className={cn(
             'bg-card border-border min-h-16 flex-row items-center gap-3.5 border-x border-t px-4 py-3.5',
             item.first && 'rounded-t-card',
-            item.last && 'rounded-b-card border-b',
+            item.last && 'rounded-b-card border-b'
          )}>
-         <ThemedView bg="background-secondary" className="border-border-subtle w-14 items-center justify-center rounded-2xl border px-1 py-2">
-            <ThemedText variant="caption" color="secondary" weight="medium" className="text-[10px] leading-4 uppercase">
+         <ThemedView
+            bg="background-secondary"
+            className="border-border-subtle w-14 items-center justify-center rounded-2xl border px-1 py-2">
+            <ThemedText
+               variant="caption"
+               color="secondary"
+               weight="medium"
+               className="text-[10px] leading-4 uppercase">
                {formatMonthShort(entry.date)}
             </ThemedText>
             <ThemedText numeric weight="semibold" className="text-xl leading-6">
@@ -121,7 +144,11 @@ const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, c
          </ThemedView>
          {role === 'segment' && i.segment ? (
             <ThemedView bg="transparent" className="items-end gap-0.5">
-               <ThemedText numeric weight="semibold" color={entry.id === bestEntryId ? 'primary' : 'default'} className="text-lg">
+               <ThemedText
+                  numeric
+                  weight="semibold"
+                  color={entry.id === bestEntryId ? 'primary' : 'default'}
+                  className="text-lg">
                   {formatL100(i.segment.l100)}
                </ThemedText>
                <ThemedText variant="caption" color="muted" className="text-[11px]">
@@ -146,7 +173,9 @@ export function HistoryScreen() {
    const { info, bestSegment } = useConsumption();
 
    const rows = useMemo<HistoryRow[]>(() => {
-      const sorted = [...entries].sort((a, b) => Date.parse(b.date) - Date.parse(a.date) || b.odometerKm - a.odometerKm);
+      const sorted = [...entries].sort(
+         (a, b) => Date.parse(b.date) - Date.parse(a.date) || b.odometerKm - a.odometerKm
+      );
       const out: HistoryRow[] = [];
       let header: Extract<HistoryRow, { type: 'header' }> | null = null;
       let lastEntryRow: Extract<HistoryRow, { type: 'entry' }> | null = null;
@@ -154,13 +183,25 @@ export function HistoryScreen() {
          const key = monthKey(e.date);
          if (!header || header.key !== `h-${key}`) {
             if (lastEntryRow) lastEntryRow.last = true;
-            header = { type: 'header', key: `h-${key}`, title: formatMonthYear(e.date), liters: 0, cost: 0 };
+            header = {
+               type: 'header',
+               key: `h-${key}`,
+               title: formatMonthYear(e.date),
+               liters: 0,
+               cost: 0,
+            };
             out.push(header);
             lastEntryRow = null;
          }
          header.liters += e.liters;
          header.cost += entryCost(e) ?? 0;
-         const row: Extract<HistoryRow, { type: 'entry' }> = { type: 'entry', key: e.id, entry: e, first: lastEntryRow === null, last: false };
+         const row: Extract<HistoryRow, { type: 'entry' }> = {
+            type: 'entry',
+            key: e.id,
+            entry: e,
+            first: lastEntryRow === null,
+            last: false,
+         };
          out.push(row);
          lastEntryRow = row;
       }
@@ -172,13 +213,23 @@ export function HistoryScreen() {
    const bestEntryId = bestSegment?.entryId;
    const renderRow = useCallback(
       ({ item }: { item: HistoryRow }) => (
-         <HistoryListRow item={item} info={info} bestEntryId={bestEntryId} currency={currency} onOpen={openFuelForm} />
+         <HistoryListRow
+            item={item}
+            info={info}
+            bestEntryId={bestEntryId}
+            currency={currency}
+            onOpen={openFuelForm}
+         />
       ),
-      [info, bestEntryId, currency, openFuelForm],
+      [info, bestEntryId, currency, openFuelForm]
    );
 
    return (
-      <Screen safeAreaEdges={['top']} withSmallPadding={false} withDismissKeyboardOnOutside={false}>
+      <Screen
+         safeAreaEdges={['top']}
+         withSmallPadding={false}
+         withDismissKeyboardOnOutside={false}
+         withGradient={false}>
          <ThemedView bg="transparent" gap="md" className="px-5 pt-7 pb-1">
             <ThemedText variant="h2">{t('history.title')}</ThemedText>
             <VehicleSwitcher />

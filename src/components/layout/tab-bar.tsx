@@ -6,8 +6,6 @@ import Animated, {
    ReduceMotion,
    useAnimatedStyle,
    useSharedValue,
-   withDelay,
-   withSequence,
    withTiming,
 } from 'react-native-reanimated';
 import { Row, ThemedView } from '../ui/themed-view';
@@ -31,23 +29,17 @@ interface TabBarProps extends BottomTabBarProps {
    action: { label: string; onPress: () => void };
 }
 
-/** Icon of a tab: pops (0.7 → 1.22 → 1, 420 ms) each time the tab becomes the active one. Transform only. */
+/** Icon of a tab: small pop (0.8 → 1, 240 ms) each time the tab becomes the active one. Transform only. */
 function TabIcon({ icon, active }: { icon: IconName; active: boolean }) {
    const scale = useSharedValue(1);
    useEffect(() => {
       if (!active) return;
-      scale.value = 0.7;
-      scale.value = withDelay(
-         120,
-         withSequence(
-            withTiming(1.22, {
-               duration: 230,
-               easing: Easing.out(Easing.cubic),
-               reduceMotion: ReduceMotion.System,
-            }),
-            withTiming(1, { duration: 190, reduceMotion: ReduceMotion.System })
-         )
-      );
+      scale.value = 0.8;
+      scale.value = withTiming(1, {
+         duration: 240,
+         easing: Easing.out(Easing.back(2)),
+         reduceMotion: ReduceMotion.System,
+      });
    }, [active, scale]);
    const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
    return (

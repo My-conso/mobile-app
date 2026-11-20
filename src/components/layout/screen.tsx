@@ -23,6 +23,8 @@ interface ScreenProps {
    withKeyboardAvoiding?: boolean;
    withSmallPadding?: boolean;
    withDismissKeyboardOnOutside?: boolean;
+   /** false: no own gradient and transparent background (tab screens: the gradient is drawn once behind the tabs) */
+   withGradient?: boolean;
    backgroundColor?: string;
    statusBarStyle?: StatusBarStyle;
    statusBarColor?: string;
@@ -54,7 +56,8 @@ export const Screen: React.FC<ScreenProps> = ({
    withSmallPadding = true,
    withKeyboardAvoiding = false,
    withDismissKeyboardOnOutside = true,
-   backgroundColor = 'bg-background',
+   withGradient = true,
+   backgroundColor = withGradient ? 'bg-background' : 'bg-transparent',
    statusBarStyle = 'light-content',
    statusBarColor = 'transparent',
    className = '',
@@ -85,12 +88,14 @@ export const Screen: React.FC<ScreenProps> = ({
    const content = (
       <ThemedView
          className={cn('flex-1', withSmallPadding ? 'px-4' : '', backgroundColor, className)}>
-         <LinearGradient
-            colors={[gradientTop, gradientMid, gradientBottom]}
-            locations={[0, 0.5, 1]}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-         />
+         {withGradient ? (
+            <LinearGradient
+               colors={[gradientTop, gradientMid, gradientBottom]}
+               locations={[0, 0.5, 1]}
+               style={StyleSheet.absoluteFill}
+               pointerEvents="none"
+            />
+         ) : null}
          <StatusBar barStyle={statusBarStyle} backgroundColor={statusBarColor} translucent />
          {resolvedChildren}
       </ThemedView>

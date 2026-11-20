@@ -8,7 +8,6 @@ import { SegmentedControl } from '@/src/components/ui/themed-segmented-control';
 import { BarChart } from '@/src/components/ui/themed-bar-chart';
 import { RowGroup } from '@/src/components/ui/themed-row-group';
 import { Cascade } from '@/src/components/ui/themed-cascade';
-import { AnimatedNumber } from '@/src/components/ui/themed-animated-number';
 import { VehicleSwitcher } from '@/src/features/fuel/components/vehicle-switcher';
 import { useConsumption, useFuelStore, useVehicleEntries } from '@/src/features/fuel/store';
 import {
@@ -93,7 +92,11 @@ export function StatsScreen() {
    const caption = (s: Segment | null) => (s ? formatDate(s.date) : '');
 
    return (
-      <Screen safeAreaEdges={['top']} withSmallPadding={false} withDismissKeyboardOnOutside={false}>
+      <Screen
+         safeAreaEdges={['top']}
+         withSmallPadding={false}
+         withDismissKeyboardOnOutside={false}
+         withGradient={false}>
          <ScrollContainer contentContainerClassName="gap-4 px-5 pt-7 pb-6">
             <Cascade index={0}>
                <ThemedText variant="h1" className="text-[34px] leading-10">
@@ -146,14 +149,13 @@ export function StatsScreen() {
                         {t('stats.best')}
                      </ThemedText>
                      {best ? (
-                        <AnimatedNumber
-                           key={`best-${period}`}
-                           value={best.l100}
-                           decimals={2}
+                        <ThemedText
+                           numeric
                            weight="bold"
                            color="primary"
-                           className="text-[28px] leading-8"
-                        />
+                           className="text-[28px] leading-8">
+                           {formatNumber(best.l100, 2)}
+                        </ThemedText>
                      ) : (
                         <ThemedText variant="h2">{dash}</ThemedText>
                      )}
@@ -166,13 +168,9 @@ export function StatsScreen() {
                         {t('stats.worst')}
                      </ThemedText>
                      {worst ? (
-                        <AnimatedNumber
-                           key={`worst-${period}`}
-                           value={worst.l100}
-                           decimals={2}
-                           weight="bold"
-                           className="text-[28px] leading-8"
-                        />
+                        <ThemedText numeric weight="bold" className="text-[28px] leading-8">
+                           {formatNumber(worst.l100, 2)}
+                        </ThemedText>
                      ) : (
                         <ThemedText variant="h2">{dash}</ThemedText>
                      )}

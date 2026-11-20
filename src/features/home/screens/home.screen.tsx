@@ -61,7 +61,11 @@ export function HomeScreen() {
       delta != null ? `${delta > 0 ? '+' : '−'}${formatNumber(Math.abs(delta), 1)} %` : '';
 
    return (
-      <Screen safeAreaEdges={['top']} withSmallPadding={false} withDismissKeyboardOnOutside={false}>
+      <Screen
+         safeAreaEdges={['top']}
+         withSmallPadding={false}
+         withDismissKeyboardOnOutside={false}
+         withGradient={false}>
          <ScrollContainer contentContainerClassName="gap-3.5 px-5 pt-6 pb-6">
             {vehicle ? (
                <Cascade index={0}>

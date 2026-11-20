@@ -1,87 +1,62 @@
 import React, { useEffect } from 'react';
-import { TextInput } from 'react-native';
 import Animated, {
    Easing,
    ReduceMotion,
-   useAnimatedProps,
+   useAnimatedStyle,
    useSharedValue,
    withDelay,
    withTiming,
 } from 'react-native-reanimated';
-import { textClassName, type ThemedTextProps } from './themed-text';
-import { cn } from '@/src/utils/tailwind';
+import { ThemedText, type ThemedTextProps } from './themed-text';
 import { formatNumber } from '@/src/lib/format';
-
-const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
 interface AnimatedNumberProps extends Omit<ThemedTextProps, 'children' | 'numeric'> {
    value: number;
    decimals?: number;
-   /** Start value (default 0) */
+   /** Kept for compatibility, no longer used (the figure no longer counts up) */
    from?: number;
-   /** Duration in ms (default 1000) */
+   /** Duration in ms (default 420) */
    duration?: number;
-   /** Small overshoot at the end (main figure of the home screen) */
+   /** Slightly stronger pop (main figure of the home screen) */
    bounce?: boolean;
 }
 
-// Same output as formatNumber (French: space for thousands, comma for decimals), written as a worklet
-// so the number can change on the UI thread: no React re-render per frame, smooth on low-end phones.
-function format(value: number, decimals: number): string {
-   'worklet';
-   const fixed = Math.abs(value).toFixed(decimals);
-   const parts = fixed.split('.');
-   const grouped = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-   return (
-      (value < 0 && Number(fixed) !== 0 ? '-' : '') + grouped + (parts[1] ? ',' + parts[1] : '')
-   );
-}
-
-/** Figure that rolls to its value when it appears. Runs entirely on the UI thread (Reanimated). */
+/**
+ * Figure that pops in when it appears (opacity + scale, UI thread).
+ * It used to count up by rewriting a TextInput on every frame: that forces a native text layout per
+ * frame, which was the main source of jank on low-end phones. A transform costs nothing.
+ */
 export function AnimatedNumber({
    value,
    decimals = 0,
-   from = 0,
-   duration = 1000,
+   duration = 420,
    bounce = false,
-   className,
-   variant,
-   weight,
-   color,
    ...rest
 }: AnimatedNumberProps) {
-   const shown = useSharedValue(from);
+   const p = useSharedValue(0);
 
    useEffect(() => {
-      shown.value = withDelay(
-         260,
-         withTiming(value, {
+      p.value = 0;
+      p.value = withDelay(
+         220,
+         withTiming(1, {
             duration,
-            easing: bounce ? Easing.out(Easing.back(1.4)) : Easing.out(Easing.cubic),
+            easing: bounce ? Easing.out(Easing.back(1.6)) : Easing.out(Easing.cubic),
             reduceMotion: ReduceMotion.System,
          })
       );
-   }, [value, duration, bounce, shown]);
+   }, [value, duration, bounce, p]);
 
-   const animatedProps = useAnimatedProps(
-      () =>
-         ({
-            text: format(shown.value, decimals),
-            defaultValue: format(shown.value, decimals),
-         }) as never
-   );
+   const style = useAnimatedStyle(() => ({
+      opacity: Math.min(p.value * 2, 1),
+      transform: [{ scale: 0.88 + 0.12 * p.value }],
+   }));
 
    return (
-      <AnimatedTextInput
-         editable={false}
-         pointerEvents="none"
-         underlineColorAndroid="transparent"
-         accessibilityRole="text"
-         accessibilityLabel={formatNumber(value, decimals)}
-         defaultValue={formatNumber(value, decimals)}
-         animatedProps={animatedProps}
-         className={cn(textClassName({ variant, weight, color, numeric: true, className }), 'p-0')}
-         {...(rest as object)}
-      />
+      <Animated.View style={[{ alignSelf: 'flex-start', transformOrigin: 'left center' }, style]}>
+         <ThemedText numeric {...rest}>
+            {formatNumber(value, decimals)}
+         </ThemedText>
+      </Animated.View>
    );
 }

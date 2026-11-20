@@ -92,6 +92,24 @@ pnpm ios
 | `pnpm build:android:production-apk` | APK de production (installation directe) |
 | `pnpm build:android:production` | Bundle AAB (store) |
 
+## ⚡ Tester la performance
+
+Mesure de la fluidité sur un téléphone Android branché en USB (débogage USB activé), avec le build de développement `com.tomo.app.development`.
+
+```bash
+# remet les compteurs de frames à zéro
+adb shell dumpsys gfxinfo com.tomo.app.development reset
+
+# fais ton scénario sur le téléphone
+
+# affiche le résultat
+adb shell dumpsys gfxinfo com.tomo.app.development | grep -E "Total frames|Janky frames|50th|90th|95th|99th"
+```
+
+À lire dans le résultat :
+- **Janky frames** : frames qui ont dépassé le budget (16 ms à 60 Hz). Plus le pourcentage est bas, mieux c'est.
+- **50th / 90th / 95th / 99th** : temps de rendu par frame, par percentile. Le 90th et le 95th montrent les saccades que l'on ressent.
+
 ## 🗂️ Structure
 
 ```

@@ -1,7 +1,11 @@
 // src/components/layout/screen.tsx
 import React from 'react';
 import { StatusBar, StatusBarStyle, TouchableWithoutFeedback } from 'react-native';
-import { KeyboardAvoidingView, KeyboardController } from 'react-native-keyboard-controller';
+import {
+   KeyboardAvoidingView,
+   KeyboardController,
+   useKeyboardState,
+} from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Skeleton } from 'boneyard-js/native';
 import { ThemedView } from '../ui/themed-view';
@@ -56,6 +60,7 @@ export const Screen: React.FC<ScreenProps> = ({
    skeletonLoading = false,
 }) => {
    const insets = useSafeAreaInsets();
+   const keyboardVisible = useKeyboardState(s => s.isVisible);
 
    const hideKeyboard = () => {
       if (withDismissKeyboardOnOutside) {
@@ -67,7 +72,9 @@ export const Screen: React.FC<ScreenProps> = ({
       <Skeleton name={skeletonName} loading={skeletonLoading}>
          {children}
       </Skeleton>
-   ) : children;
+   ) : (
+      children
+   );
 
    const content = (
       <ThemedView
@@ -81,7 +88,11 @@ export const Screen: React.FC<ScreenProps> = ({
    const safeAreaStyle = withSafeArea
       ? {
            paddingTop: safeAreaEdges.includes('top') ? insets.top : 0,
-           paddingBottom: safeAreaEdges.includes('bottom') ? insets.bottom : 0,
+           // With the keyboard open, the keyboard already covers the bottom inset (it would show as an empty band)
+           paddingBottom:
+              safeAreaEdges.includes('bottom') && !(withKeyboardAvoiding && keyboardVisible)
+                 ? insets.bottom
+                 : 0,
            paddingLeft: safeAreaEdges.includes('left') ? insets.left : 0,
            paddingRight: safeAreaEdges.includes('right') ? insets.right : 0,
         }

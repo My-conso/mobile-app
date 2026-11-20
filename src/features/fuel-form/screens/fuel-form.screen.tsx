@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/layout/screen';
 import { ScreenHeader } from '@/src/components/layout/screen-header';
+import { FormFooter } from '@/src/components/layout/form-footer';
 import { ScrollContainer } from '@/src/components/layout/scroll-container';
 import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
@@ -255,6 +256,7 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
          />
 
          <ScrollContainer
+            keyboardAware
             contentContainerClassName="gap-3.5 px-5 pt-3 pb-4"
             keyboardShouldPersistTaps="handled">
             <DateTimeField label={t('form.date')} value={date} onChange={setDate} />
@@ -361,9 +363,9 @@ function FuelFormInner({ activeVehicle }: { activeVehicle: Vehicle }) {
             ) : null}
          </ScrollContainer>
 
-         <ThemedView bg="transparent" className="px-5 pt-2 pb-7">
+         <FormFooter>
             <ThemedButton title={t('form.save')} size="lg" fullWidth onPress={onSave} />
-         </ThemedView>
+         </FormFooter>
       </Screen>
    );
 }

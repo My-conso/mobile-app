@@ -3,6 +3,7 @@ import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import i18next from 'i18next';
 import { Screen } from '@/src/components/layout/screen';
+import { FormFooter } from '@/src/components/layout/form-footer';
 import { ScrollContainer } from '@/src/components/layout/scroll-container';
 import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
@@ -151,7 +152,7 @@ export function OnboardingScreen() {
 
          {step === 2 ? (
             <Animated.View entering={FadeInDown.duration(260).reduceMotion(ReduceMotion.System)} className="flex-1">
-               <ScrollContainer contentContainerClassName="gap-5 px-6 pt-7 pb-4" keyboardShouldPersistTaps="handled">
+               <ScrollContainer keyboardAware contentContainerClassName="gap-5 px-6 pt-7 pb-4" keyboardShouldPersistTaps="handled">
                   <ThemedView bg="transparent" gap="sm">
                      <ThemedText variant="h1" className="text-[28px]">
                         {t('onboarding.bike_title')}
@@ -179,13 +180,13 @@ export function OnboardingScreen() {
             </Animated.View>
          ) : null}
 
-         <ThemedView bg="transparent" className="px-6 pt-4 pb-9">
+         <FormFooter className="px-6 pt-4 pb-9">
             {step === 3 ? (
                <ThemedButton title={t('onboarding.done_cta')} size="lg" fullWidth onPress={finish} />
             ) : (
                <ThemedButton title={step === 2 ? t('onboarding.finish') : lang === 'mg' ? 'Tohizo' : 'Continuer'} size="lg" fullWidth onPress={next} />
             )}
-         </ThemedView>
+         </FormFooter>
       </Screen>
    );
 }

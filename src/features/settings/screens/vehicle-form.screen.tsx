@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { Screen } from '@/src/components/layout/screen';
 import { ScreenHeader } from '@/src/components/layout/screen-header';
+import { FormFooter } from '@/src/components/layout/form-footer';
 import { ScrollContainer } from '@/src/components/layout/scroll-container';
 import { Row, ThemedView } from '@/src/components/ui/themed-view';
 import { ThemedText } from '@/src/components/ui/themed-text';
@@ -151,6 +152,7 @@ export function VehicleFormScreen() {
          />
 
          <ScrollContainer
+            keyboardAware
             scrollRef={scrollRef}
             contentContainerClassName="gap-6 px-5 pt-4 pb-6"
             keyboardShouldPersistTaps="handled">
@@ -199,7 +201,7 @@ export function VehicleFormScreen() {
             />
          </ScrollContainer>
 
-         <ThemedView bg="transparent" gap="sm" className="px-5 pt-2 pb-7">
+         <FormFooter gap="sm">
             <ThemedButton title={t('vehicle_form.save')} size="lg" fullWidth onPress={onSave} />
             {isEdit ? (
                <ThemedButton
@@ -211,7 +213,7 @@ export function VehicleFormScreen() {
                   onPress={onDelete}
                />
             ) : null}
-         </ThemedView>
+         </FormFooter>
       </Screen>
    );
 }

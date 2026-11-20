@@ -6,6 +6,7 @@ import {
    Animated,
    TouchableOpacity,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as Haptics from 'expo-haptics';
 import { ThemedView } from '../ui/themed-view';
 import { cn } from '@/src/utils/tailwind';
@@ -21,6 +22,8 @@ interface ScrollContainerProps extends ScrollViewProps {
    showsHorizontalScrollIndicator?: boolean;
    className?: string;
    contentContainerClassName?: string;
+   /** Scrolls the focused input above the keyboard (use on screens with text fields) */
+   keyboardAware?: boolean;
    /** Lets the parent scroll programmatically (scrollTo) */
    scrollRef?: React.MutableRefObject<ScrollView | null>;
 }
@@ -51,12 +54,16 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
    contentContainerClassName = '',
    onScroll,
    scrollRef,
+   keyboardAware = false,
    ...props
 }) => {
    const [refreshing, setRefreshing] = useState(false);
    const [, setShowTopButton] = useState(false);
    const scrollViewRef = useRef<ScrollView>(null);
    const scrollY = useRef(new Animated.Value(0)).current;
+
+   const trackScroll = showScrollToTop || !!onScroll;
+   const Scroller: any = keyboardAware ? KeyboardAwareScrollView : ScrollView;
 
    const handleRefresh = async () => {
       if (!onRefresh) return;
@@ -94,8 +101,8 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 
    return (
       <ThemedView className="flex-1">
-         <ScrollView
-            ref={node => {
+         <Scroller
+            ref={(node: ScrollView | null) => {
                scrollViewRef.current = node;
                if (scrollRef) scrollRef.current = node;
             }}
@@ -114,11 +121,16 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
                   />
                ) : undefined
             }
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
+            // Scroll events cross the JS bridge every frame: only listen when something uses them
+            // (the scroll-to-top button or a parent's onScroll), to keep scrolling light on low-end phones
+            onScroll={trackScroll ? handleScroll : undefined}
+            scrollEventThrottle={trackScroll ? 16 : undefined}
+            {...(keyboardAware
+               ? { bottomOffset: 24, keyboardDismissMode: 'on-drag' as const }
+               : {})}
             {...props}>
             {children}
-         </ScrollView>
+         </Scroller>
 
          {/* Scroll to top button */}
          {showScrollToTop && (

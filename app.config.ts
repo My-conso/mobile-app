@@ -68,7 +68,7 @@ export default ({ config }: { config: any }) => {
           foregroundImage: `${IMAGES}/android-icon-foreground.png`,
           backgroundImage: `${IMAGES}/android-icon-background.png`,
           monochromeImage: `${IMAGES}/android-icon-monochrome.png`,
-          backgroundColor: "#0F1012",
+          backgroundColor: "#021B1C",
         },
         predictiveBackGestureEnabled: false,
         package: packageName,
@@ -95,7 +95,7 @@ export default ({ config }: { config: any }) => {
             // Android 12+ only shows a 192dp circle inside the 288dp icon canvas: at 340 the corners of the
             // logo (bottom of "ToMo") were cut round. 260 keeps all of it inside the circle.
             android: { imageWidth: 260 },
-            backgroundColor: "#0F1012",
+            backgroundColor: "#021B1C",
             dark: { image: `${IMAGES}/splash-icon-dark.png`, backgroundColor: "#000000" },
           },
         ],

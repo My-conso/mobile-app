@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png",
-        "backgroundColor": "#0F1012"
+        "backgroundColor": "#021B1C"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.tomo.app",
@@ -49,7 +49,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 340,
           "android": { "imageWidth": 260 },
-          "backgroundColor": "#0F1012",
+          "backgroundColor": "#021B1C",
           "dark": {
             "image": "./assets/images/splash-icon-dark.png",
             "backgroundColor": "#000000"

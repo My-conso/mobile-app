@@ -92,6 +92,9 @@ export default ({ config }: { config: any }) => {
           {
             image: `${IMAGES}/splash-icon.png`,
             imageWidth: 340,
+            // Android 12+ only shows a 192dp circle inside the 288dp icon canvas: at 340 the corners of the
+            // logo (bottom of "ToMo") were cut round. 260 keeps all of it inside the circle.
+            android: { imageWidth: 260 },
             backgroundColor: "#0F1012",
             dark: { image: `${IMAGES}/splash-icon-dark.png`, backgroundColor: "#000000" },
           },

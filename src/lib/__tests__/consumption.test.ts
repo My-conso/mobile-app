@@ -1,7 +1,6 @@
 import {
    computeAlert,
    computeConsumption,
-   estimatedRangeKm,
    filterSegmentsByPeriod,
    previewEntry,
 } from '../consumption';
@@ -258,14 +257,7 @@ describe('saisie avec virgule ou point', () => {
    });
 });
 
-describe('autonomie, alerte, période, aperçu', () => {
-   it('autonomie estimée', () => {
-      const r = computeConsumption(scenario);
-      expect(estimatedRangeKm(r.summary.l100, 5.5)).toBeCloseTo((5.5 * 100) / 2.84444, 2);
-      expect(estimatedRangeKm(r.summary.l100, undefined)).toBeNull();
-      expect(estimatedRangeKm(null, 5.5)).toBeNull();
-   });
-
+describe('alerte, période, aperçu', () => {
    it('alerte : au moins 3 segments et dernier > moyenne + seuil', () => {
       const base = [
          entry('a', '2026-01-01', 0, 5),

@@ -219,12 +219,6 @@ export function computeConsumption(entries: EntryInput[]): ConsumptionResult {
    };
 }
 
-/** Estimated range in km with a full tank, or null when it can't be computed. */
-export function estimatedRangeKm(l100: number | null, tankCapacityLiters?: number): number | null {
-   if (!l100 || l100 <= 0 || !tankCapacityLiters || tankCapacityLiters <= 0) return null;
-   return (tankCapacityLiters * 100) / l100;
-}
-
 export interface ConsumptionAlert {
    /** Increase of the last segment vs the global average, in % */
    percent: number;

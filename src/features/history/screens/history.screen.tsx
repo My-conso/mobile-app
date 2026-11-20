@@ -102,7 +102,7 @@ const HistoryListRow = memo(function HistoryListRow({ item, info, bestEntryId, c
          )}>
          <ThemedView bg="background-secondary" className="border-border-subtle w-14 items-center justify-center rounded-2xl border px-1 py-2">
             <ThemedText variant="caption" color="secondary" weight="medium" className="text-[10px] leading-4 uppercase">
-               {formatMonthShort(entry.date).replace('.', '')}
+               {formatMonthShort(entry.date)}
             </ThemedText>
             <ThemedText numeric weight="semibold" className="text-xl leading-6">
                {day}

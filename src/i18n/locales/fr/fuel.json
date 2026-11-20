@@ -47,7 +47,6 @@
       "trend_down": "Ton dernier plein a été plus économe",
       "trend_alert": "Ta consommation a augmenté. Vérifie : pression des pneus, filtre à air, bougie, courroie et galets.",
       "last_entry": "Ton dernier plein",
-      "odometer_aria": "Compteur {{km}} km",
       "need_two_fulls": "Il faut au moins deux pleins complets pour calculer.",
       "welcome_title": "Bienvenue sur ToMo",
       "welcome_text": "Ajoute ta moto pour suivre ta consommation. Tout reste sur ton téléphone.",
